@@ -1,0 +1,15 @@
+table {
+    width: unset !important;
+}
+th, td {
+    min-width: 3rem;
+    padding: .25rem !important;
+}
+th>pre, td>pre {
+    font-size: unset;
+    margin-bottom: 0;
+    outline: 0;
+}
+a {
+    text-decoration: none;
+}
