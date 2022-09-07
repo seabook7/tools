@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CSV Editor</title>
+    <link href="bootstrap-5.2.0-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="styles/data-table.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container d-flex flex-column py-3 h-100">
+      <div class="row">
+        <div class="col-12 col-md-6 col-xl-4 mb-3">
+          <div class="input-group">
+            <input class="form-control" id="file-name">
+            <button class="btn btn-outline-primary" style="width:4rem;" data-bs-toggle="modal" data-bs-target="#newModal">New</button>
+            <button class="btn btn-outline-primary" style="width:4rem;" id="open-button">Open</button>
+            <button class="btn btn-outline-primary" style="width:4rem;" id="save-button">Save</button>
+          </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-2 mb-3">
+          <div class="input-group">
+            <span class="input-group-text" style="width:5.5rem;">Delimiter:</span>
+            <select class="form-select" id="delimiter-select">
+            </select>
+          </div>
+        </div>
+        <div class="col-6 col-md-3 col-xl-2 mb-3">
+          <div class="input-group">
+            <span class="input-group-text" style="width:5.5rem;">Quote:</span>
+            <select class="form-select" id="quote-select">
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex-fill">
+      </div>
+    </div>
+    <div class="modal fade" id="newModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Create new file</h5>
+          </div>
+          <div class="modal-body d-flex justify-content-between">
+            <label class="form-label">
+              Rows conut:
+              <input class="form-control" id="rows-count">
+            </label>
+            <label class="form-label">
+              Columns conut:
+              <input class="form-control" id="columns-count">
+            </label>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" style="width:4rem;" data-bs-dismiss="modal" id="new-button">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>    
+    <script src="bootstrap-5.2.0-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/data-table.js"></script>
+    <script src="scripts/csv-editor.js"></script>
+  </body>
+</html>
