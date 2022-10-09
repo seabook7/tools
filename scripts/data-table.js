@@ -235,9 +235,8 @@ const dataTable = (function () {
     function build(rowsCount, columnsCount, data) {
         let i = 0;
         let j = 0;
-        headRow.replaceChildren();
+        headRow.replaceChildren(headCell);
         body.replaceChildren();
-        headRow.append(headCell);
         while (i < columnsCount) {
             i += 1;
             headRow.append(createColumnHeadCell(
