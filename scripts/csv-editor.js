@@ -1,5 +1,5 @@
 /*global
-    dataTable
+    fileIO, editableTable
 */
 /*jslint
     browser
@@ -28,24 +28,6 @@
     const delimiterSelect = document.getElementById("delimiter-select");
     const quoteSelect = document.getElementById("quote-select");
     const div = document.querySelector("div.flex-fill");
-    function readTextFile() {
-        return new Promise(function (resolve) {
-            const fileInput = document.createElement("input");
-            fileInput.type = "file";
-            fileInput.accept = "text/csv,text/plain";
-            fileInput.addEventListener("change", function () {
-                const reader = new FileReader();
-                reader.addEventListener("load", function () {
-                    resolve({
-                        name: fileInput.files[0].name,
-                        text: reader.result.replace(/\r\n?/g, "\n")
-                    });
-                });
-                reader.readAsText(fileInput.files[0]);
-            });
-            fileInput.click();
-        });
-    }
     function split(text, quote, delimiter) {
         if (quote.length === 1 && delimiter.length === 1) {
             const array = [];
@@ -100,7 +82,6 @@
         return field;
     }
     function encode(field, quote, delimiter) {
-        field = field.replace(/\n$/, "");
         if (quote.length === 1) {
             if (
                 field.includes(quote)
@@ -116,13 +97,12 @@
     }
     function computeRange() {
         const rect = div.getBoundingClientRect();
-        const cellSize = dataTable.getCellSize();
+        const cellSize = editableTable.getCellSize();
         rowsCountInput.value = Math.trunc(rect.height / cellSize.height) - 2;
         columnsCountInput.value = Math.trunc(rect.width / cellSize.width) - 2;
     }
     function createNew() {
-        div.replaceChildren();
-        div.append(dataTable.create(
+        div.replaceChildren(editableTable.create(
             parseInt(rowsCountInput.value),
             parseInt(columnsCountInput.value)
         ));
@@ -130,8 +110,13 @@
     fileNameInput.value = "New.txt";
     newButton.addEventListener("click", createNew);
     openButton.addEventListener("click", async function () {
-        const file = await readTextFile();
-        const data = split(file.text.replace(/\n$/, ""), quote, "\n").map(
+        const file = await fileIO.open("text/csv,text/plain");
+        const text = await file.text();
+        const data = split(
+            text.replace(/\r\n?/g, "\n").replace(/\n$/, ""),
+            quote,
+            "\n"
+        ).map(
             (record) => split(record, quote, delimiter).map(
                 (field) => decode(field, quote)
             )
@@ -141,23 +126,20 @@
         columnsCountInput.value = Math.max(
             ...data.map((record) => record.length)
         );
-        div.replaceChildren();
-        div.append(dataTable.from(data));
+        div.replaceChildren(editableTable.from(data));
     });
     saveButton.addEventListener("click", function () {
-        const data = dataTable.toData();
+        const data = editableTable.toData();
         const text = data.reduce(
             (string, record) => string + record.map(
                 (field) => encode(field, quote, delimiter)
             ).join(delimiter) + "\n",
             ""
         );
-        const blob = new Blob([text], {endings: "native"});
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = fileNameInput.value;
-        a.click();
-        URL.revokeObjectURL(a.href);
+        fileIO.download(
+            new Blob([text], {endings: "native"}),
+            fileNameInput.value
+        );
     });
     delimiterSelect.append(...delimiters.map(function (delimiter) {
         const option = document.createElement("option");
