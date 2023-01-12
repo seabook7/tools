@@ -32,7 +32,7 @@ const utility = {
             offset += 1;
         }
         if (inBuffer) {
-            buffer.subarray(start);
+            buffers.push(buffer.subarray(start));
         }
         return buffers;
     },
