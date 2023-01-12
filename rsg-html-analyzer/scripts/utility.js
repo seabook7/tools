@@ -63,21 +63,22 @@ const utility = {
         return string;
     },
     encode(codeTable, string, length) {
-        const stringLength = string.length;
         const buffer = new Uint8Array(length ?? stringLength * 2);
         let i = 0;
+        const stringLength = string.length;
         let offset = 0;
+        const bufferLength = buffer.length;
         buffer.fill(0x50);
-        while (i < stringLength && offset < buffer.length) {
+        while (i < stringLength && offset < bufferLength) {
             let code = codeTable.indexOf(string.charAt(i));
             if (code > -1) {
                 if (code < 0xb0) {
-                    if (offset + 1 <= buffer.length) {
+                    if (offset + 1 <= bufferLength) {
                         buffer.set([code + 0x50], offset);
                     }
                     offset += 1;
                 } else {
-                    if (offset + 2 <= buffer.length) {
+                    if (offset + 2 <= bufferLength) {
                         const code1 = code % 0x100;
                         code = (code - code1) / 0x100 + 0x20;
                         buffer.set([code, code1], offset);
