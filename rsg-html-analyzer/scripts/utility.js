@@ -1,6 +1,6 @@
 /*jslint unordered*/
 const utility = {
-    getBuffers(buffer, offset, length, number) {
+    getFixedLengthBuffers(buffer, offset, length, number) {
         const buffers = new Array(number);
         let i = 0;
         while (i < number) {
@@ -11,20 +11,18 @@ const utility = {
         }
         return buffers;
     },
-    splitBuffer(buffer, code) {
+    getVariableLengthBuffers(buffer, offset, end, splitCode) {
         const buffers = [];
         let inBuffer = false;
         let start;
-        let offset = 0;
-        const length = buffer.length;
-        while (offset < length) {
+        while (offset < end) {
             if (inBuffer) {
-                if (buffer[offset] === code) {
+                if (buffer[offset] === splitCode) {
                     buffers.push(buffer.subarray(start, offset));
                     inBuffer = false;
                 }
             } else {
-                if (buffer[offset] !== code) {
+                if (buffer[offset] !== splitCode) {
                     start = offset;
                     inBuffer = true;
                 }
@@ -32,7 +30,7 @@ const utility = {
             offset += 1;
         }
         if (inBuffer) {
-            buffers.push(buffer.subarray(start));
+            buffers.push(buffer.subarray(start, end));
         }
         return buffers;
     },
