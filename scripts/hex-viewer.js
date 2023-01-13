@@ -30,7 +30,7 @@ function buildText(array) {
 openButton.addEventListener("click", async function () {
     const file = await fileIO.open();
     fileName.value = file.name;
-    fileSize.replaceChildren(file.size + " bytes");
+    fileSize.value = file.size + " bytes";
     const array = new Uint8Array(await file.arrayBuffer());
     hexText.replaceChildren(buildText(array));
 });
