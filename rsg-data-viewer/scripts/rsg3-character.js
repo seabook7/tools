@@ -1,5 +1,5 @@
 /*jslint bitwise, browser, unordered*/
-/*global utility, rsg3CodeTable*/
+/*global utility, rsg3Encoding*/
 const rsg3character = (function () {
     function readData(buffer) {
         const earthMagicTable = ["souryu", "syuchoh", "byakko", "genbu"];
@@ -77,12 +77,12 @@ const rsg3character = (function () {
     }
     return function (rsg3rom) {
         const names = utility.getBuffers(rsg3rom, 0x3d1480, 8, 48).map(
-            (buffer) => utility.decode(rsg3CodeTable, buffer)
+            (buffer) => rsg3Encoding.decode(buffer)
         );
         const data = utility.getBuffers(rsg3rom, 0x3e0600, 48, 48).map(
             (buffer) => readData(buffer)
         );
-        const levelUp = utility.getBuffers(rsg3rom, 0x3e31bf, 16, 46).map(
+        const levelUp = utility.getBuffers(rsg3rom, 0x3e31bf, 16, 48).map(
             (buffer) => readLevelUp(buffer)
         );
         return {
