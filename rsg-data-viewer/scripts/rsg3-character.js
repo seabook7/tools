@@ -87,6 +87,9 @@ const rsg3Character = function (rsg3Rom) {
         names: utility.getFixedLengthBuffers(rsg3Rom, 0x3D1480, 8, 256).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
+        ids: utility.getFixedLengthBuffers(rsg3Rom, 0x3D1C80, 10, 32).map(
+            (buffer) => rsg3Encoding.decode(buffer)
+        ),
         data: [
             utility.getFixedLengthBuffers(rsg3Rom, 0x3E0600, 48, 48).map(
                 (buffer) => readData0(buffer)
