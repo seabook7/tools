@@ -17,22 +17,11 @@ openButton.addEventListener("click", async function () {
     fileName.value = file.name;
     const buffer = await file.arrayBuffer();
     const headerLength = 0x200;
-    const rsg3rom = (
+    const rsg3Rom = (
         buffer.byteLength % 0x400 === headerLength
         ? new Uint8Array(buffer, headerLength)
         : new Uint8Array(buffer)
     );
-    getRomInfo(rsg3rom);
-    //window.console.log(rsg3Character(rsg3rom));
-    const skill = rsg3Skill(rsg3rom);
-    window.console.log(skill.data.map(function (s, index) {
-        return {
-            name: skill.names[index],
-            derivativeFlag: s.derivativeFlag,
-            derivative: s.derivative,
-            itemBreak: s.pointFlag,
-            point: s.point,
-            learn: skill.learn[index]
-        }
-    }));
+    getRomInfo(rsg3Rom);
+    window.console.log(rsg3Text(rsg3Rom));
 });

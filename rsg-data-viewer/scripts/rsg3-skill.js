@@ -10,9 +10,6 @@ const rsg3Skill = function (rsg3Rom) {
         }
     }
     return {
-        names: utility.getFixedLengthBuffers(rsg3Rom, 0x3D27C0, 10, 512).map(
-            (buffer) => rsg3Encoding.decode(buffer)
-        ),
         data: utility.getFixedLengthBuffers(rsg3Rom, 0x3E0F00, 14, 256).map(
             (buffer) => readData(buffer)
         ),
