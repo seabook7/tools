@@ -53,40 +53,44 @@ function SNESRom(arrayBuffer) {
     });
 }
 Object.defineProperties(SNESRom.prototype, {
-    getFixedLengthBuffers(offset, length, number) {
-        const buffer = this.buffer;
-        const buffers = new Array(number);
-        let i = 0;
-        while (i < number) {
-            const end = offset + length;
-            buffers[i] = buffer.subarray(offset, end);
-            offset = end;
-            i += 1;
-        }
-        return buffers;
-    },
-    getVariableLengthBuffers(offset, end, splitCode) {
-        const buffer = this.buffer;
-        const buffers = [];
-        let inBuffer = false;
-        let start;
-        while (offset < end) {
-            if (inBuffer) {
-                if (buffer[offset] === splitCode) {
-                    buffers.push(buffer.subarray(start, offset));
-                    inBuffer = false;
-                }
-            } else {
-                if (buffer[offset] !== splitCode) {
-                    start = offset;
-                    inBuffer = true;
-                }
+    getFixedLengthBuffers: {
+        value(offset, length, number) {
+            const buffer = this.buffer;
+            const buffers = new Array(number);
+            let i = 0;
+            while (i < number) {
+                const end = offset + length;
+                buffers[i] = buffer.subarray(offset, end);
+                offset = end;
+                i += 1;
             }
-            offset += 1;
+            return buffers;
         }
-        if (inBuffer) {
-            buffers.push(buffer.subarray(start, end));
+    },
+    getVariableLengthBuffers: {
+        value(offset, end, splitCode) {
+            const buffer = this.buffer;
+            const buffers = [];
+            let inBuffer = false;
+            let start;
+            while (offset < end) {
+                if (inBuffer) {
+                    if (buffer[offset] === splitCode) {
+                        buffers.push(buffer.subarray(start, offset));
+                        inBuffer = false;
+                    }
+                } else {
+                    if (buffer[offset] !== splitCode) {
+                        start = offset;
+                        inBuffer = true;
+                    }
+                }
+                offset += 1;
+            }
+            if (inBuffer) {
+                buffers.push(buffer.subarray(start, end));
+            }
+            return buffers;
         }
-        return buffers;
     }
 });
