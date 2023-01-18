@@ -1,13 +1,11 @@
 /*jslint bitwise, this*/
 /*global jisx0201Encoding*/
 function SNESRom(arrayBuffer) {
-    const headerLength = 512;
+    const headerLength = arrayBuffer.byteLength % 1024;
     Object.defineProperties(this, {
-        buffer: {value: (
-            arrayBuffer.byteLength % 1024 === headerLength
-            ? new Uint8Array(arrayBuffer, headerLength)
-            : new Uint8Array(arrayBuffer)
-        )}
+        arrayBuffer: {value: arrayBuffer},
+        buffer: {value: new Uint8Array(arrayBuffer, headerLength)},
+        headerLength: {value: headerLength}
     });
     const length = this.buffer.length;
     let header;
@@ -53,7 +51,7 @@ function SNESRom(arrayBuffer) {
     });
 }
 Object.defineProperties(SNESRom.prototype, {
-    getFixedLengthBuffers: {
+    getBuffers: {
         value(offset, length, number) {
             const buffer = this.buffer;
             const buffers = new Array(number);
@@ -67,30 +65,31 @@ Object.defineProperties(SNESRom.prototype, {
             return buffers;
         }
     },
-    getVariableLengthBuffers: {
-        value(offset, end, splitCode) {
+    getBuffersFromTable: {
+        value(offset, table) {
             const buffer = this.buffer;
-            const buffers = [];
-            let inBuffer = false;
-            let start;
-            while (offset < end) {
-                if (inBuffer) {
-                    if (buffer[offset] === splitCode) {
-                        buffers.push(buffer.subarray(start, offset));
-                        inBuffer = false;
-                    }
-                } else {
-                    if (buffer[offset] !== splitCode) {
-                        start = offset;
-                        inBuffer = true;
-                    }
-                }
-                offset += 1;
+            const length = table.length - 1;
+            const buffers = new Array(length);
+            let i = 0;
+            while (i < length) {
+                const next = i + 1;
+                buffers[i] = buffer.subarray(
+                    offset + table[i],
+                    offset + table[next]
+                );
+                i = next;
             }
-            if (inBuffer) {
-                buffers.push(buffer.subarray(start, end));
-            }
+            //console.log(offset + table[i]);
             return buffers;
+        }
+    },
+    getTable: {
+        value(offset, endOffset) {
+            return new Uint16Array(
+                this.arrayBuffer,
+                offset + this.headerLength,
+                (endOffset - offset) / 2
+            );
         }
     }
 });
