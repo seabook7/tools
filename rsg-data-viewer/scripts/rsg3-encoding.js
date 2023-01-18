@@ -5,7 +5,7 @@ const rsg3Encoding = (function () {
     }
     const codeTable = [
         /* 0x20 */
-        "", "あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ",
+        "　", "あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ",
         "た", "ち", "つ", "て", "と", "な", "に", "ぬ", "ね", "の", "は", "ひ", "ふ", "ほ", "ま", "み",
         "む", "め", "も", "や", "ゆ", "よ", "ら", "り", "る", "れ", "ろ", "わ", "を", "ん", "ゃ", "ゅ",
         "ょ", "っ", "ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ", "サ", "シ", "ス", "セ",
@@ -80,24 +80,22 @@ const rsg3Encoding = (function () {
             const length = buffer.length;
             while (offset < length) {
                 const code = buffer[offset];
-                if (code === 0x50) {
-                    break;
-                }
-                if (code > 0x50) {
+                if (code >= 0x50) {
                     string += codeTable[code - 0x50];
                 } else {
-                    if (code >= 0x20 && code <= 0x23 && offset + 1 < length) {
+                    const next = offset + 1;
+                    if (code >= 0x20 && code <= 0x23 && next < length) {
                         string += codeTable[
-                            (code - 0x20) * 0x100 + buffer[offset + 1]
+                            (code - 0x20) * 0x100 + buffer[next]
                         ];
-                        offset += 1;
+                        offset = next;
                     } else {
                         string += "[" + getHex(code) + "]";
                     }
                 }
                 offset += 1;
             }
-            return string;
+            return string.replace(/　+$/, "");
         },
         encode(string) {
             const length = string.length;
@@ -108,7 +106,11 @@ const rsg3Encoding = (function () {
                 const code = codeTable.indexOf(string.charAt(i));
                 if (code > -1) {
                     if (code < 0xB0) {
-                        buffer.set([code + 0x50], offset);
+                        buffer.set([(
+                            code === 0
+                            ? 0xE6
+                            : code + 0x50
+                        )], offset);
                         offset += 1;
                     } else {
                         const code1 = code % 0x100;
