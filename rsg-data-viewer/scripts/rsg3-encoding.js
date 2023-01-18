@@ -89,6 +89,8 @@ const rsg3Encoding = (function () {
                             (code - 0x20) * 0x100 + buffer[next]
                         ];
                         offset = next;
+                    } else if (code === 0x24) {
+                        string += "\n";
                     } else {
                         string += "[" + getHex(code) + "]";
                     }

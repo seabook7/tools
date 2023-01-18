@@ -130,12 +130,14 @@ function rsg3Text(rsg3Rom) {
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
-        test: rsg3Rom.getBuffersFromTable(
+        massCombatInfomation: rsg3Rom.getBuffersFromTable(
             0x3DC200,
             rsg3Rom.getTable(0x3DC000, 0x3DC200)
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
-        )
-        //0x3DE000
+        ),
+        // 0x3DE000~0x3DF800 ???
+        // menu ?
+        menu: rsg3Encoding.decode(rsg3Rom.buffer.subarray(0x3DF800, 0x3DFDB5))
     };
 }
