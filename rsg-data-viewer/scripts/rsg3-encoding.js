@@ -89,8 +89,17 @@ const rsg3Encoding = (function () {
                             (code - 0x20) * 0x100 + buffer[next]
                         ];
                         offset = next;
+                    } else if (code === 0x3B && next < length) {
+                        string += "${submap[" + buffer[next] + "]}";
+                        offset = next;
+                    
+                    } else if (code === 0x4A && next < length) {
+                        string += "${character[" + buffer[next] + "]}";
+                        offset = next;
                     } else if (code === 0x24) {
                         string += "\n";
+                    } else if (code === 0x2C) {
+                        string += "\f";
                     } else {
                         string += "[" + getHex(code) + "]";
                     }
