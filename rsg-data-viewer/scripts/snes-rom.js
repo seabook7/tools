@@ -65,6 +65,21 @@ Object.defineProperties(SNESRom.prototype, {
             return buffers;
         }
     },
+    getBuffersFromList: {
+        value(offset, list) {
+            const buffer = this.buffer;
+            const length = list.length;
+            const buffers = new Array(length);
+            let i = 0;
+            while (i < length) {
+                const end = offset + list[i];
+                buffers[i] = buffer.subarray(offset, end);
+                offset = end;
+                i += 1;
+            }
+            return buffers;
+        }
+    },
     getBuffersFromTable: {
         value(offset, table) {
             const buffer = this.buffer;
@@ -79,7 +94,6 @@ Object.defineProperties(SNESRom.prototype, {
                 );
                 i = next;
             }
-            //console.log(offset + table[i]);
             return buffers;
         }
     },
