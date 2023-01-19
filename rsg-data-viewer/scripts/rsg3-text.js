@@ -2,6 +2,10 @@
 /*global rsg3Encoding*/
 function rsg3Text(rsg3Rom) {
     return {
+        /* useless
+        // unknown format
+        text: rsg3Encoding.decode(rsg3Rom.buffer.subarray(0x3C0000, 0x3D0000)),
+        */
         formation: rsg3Rom.getBuffers(
             0x3D0000,
             10,
@@ -37,6 +41,7 @@ function rsg3Text(rsg3Rom) {
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
+        /* useless
         submap: rsg3Rom.getBuffers(
             0x3D1DC0,
             10,
@@ -44,6 +49,7 @@ function rsg3Text(rsg3Rom) {
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
+        */
         characterSkill: rsg3Rom.getBuffers(
             0x3D27C0,
             10,
@@ -65,6 +71,7 @@ function rsg3Text(rsg3Rom) {
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
+        /* useless
         property: rsg3Rom.getBuffers(
             0x3D3E40,
             14,
@@ -100,12 +107,14 @@ function rsg3Text(rsg3Rom) {
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
+        */
         description: rsg3Rom.getBuffersFromTable(
             0x3D6200,
             rsg3Rom.getTable(0x3D6000, 0x3D6174)
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
+        /* useless
         trade: rsg3Rom.getBuffersFromTable(
             0x3D7D00,
             rsg3Rom.getTable(0x3D7800, 0x3D7C32)
@@ -136,8 +145,20 @@ function rsg3Text(rsg3Rom) {
         ).map(
             (buffer) => rsg3Encoding.decode(buffer)
         ),
-        // 0x3DE000~0x3DF800 ???
-        // menu ?
-        menu: rsg3Encoding.decode(rsg3Rom.buffer.subarray(0x3DF800, 0x3DFDB5))
+        // 0x3DE000-0x3DF800 ???
+        // 0x3DF800-0x3DFDB5 menu?
+        menu: rsg3Rom.getBuffersFromTable(
+            0x3DFA08,
+            rsg3Rom.getTable(0x3DF976, 0x3DFA08)
+        ).map(
+            (buffer) => rsg3Encoding.decode(buffer)
+        ),
+        */
+        // custom
+        starType: ["歳星", "熒惑", "鎮星", "太白", "辰星"],
+        favoriteType: ["剣", "大剣", "斧", "棍棒", "小剣", "槍", "弓", "素手", "なし"],
+        earthMagicType: ["蒼龍", "朱鳥", "白虎", "玄武"],
+        heavenMagicType: ["太陽", "月"],
+        defaultMagicType: ["蒼龍", "朱鳥", "太陽", "白虎", "玄武"]
     };
 }
