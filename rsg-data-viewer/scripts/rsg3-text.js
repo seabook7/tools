@@ -4,7 +4,7 @@ function rsg3Text(rsg3Rom) {
     return {
         /* useless
         // unknown format
-        text: rsg3Encoding.decode(rsg3Rom.buffer.subarray(0x3C0000, 0x3D0000)),
+        dialogue: rsg3Encoding.decode(rsg3Rom.buffer.subarray(0x3C0000, 0x3D0000)),
         */
         formation: rsg3Rom.getBuffers(
             0x3D0000,
