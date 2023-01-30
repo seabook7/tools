@@ -80,28 +80,39 @@ const rsg3Encoding = (function () {
             const length = buffer.length;
             while (offset < length) {
                 const code = buffer[offset];
+                // single byte
                 if (code >= 0x50) {
                     string += codeTable[code - 0x50];
                 } else {
                     const next = offset + 1;
-                    if (code >= 0x20 && code <= 0x23 && next < length) {
+                    // ???
+                    if (code === 0x17 && next < length) {
+                        string += "[17 " + getHex(buffer[next]) + "]";
+                        offset = next;
+                    // double byte
+                    } else if (code >= 0x20 && code <= 0x23 && next < length) {
                         string += codeTable[
                             (code - 0x20) * 0x100 + buffer[next]
                         ];
                         offset = next;
+                    // new line
+                    } else if (code === 0x24) {
+                        string += "\n";
+                    // wait ?
+                    } else if (code === 0x2B && next < length) {
+                        string += "[2B " + getHex(buffer[next]) + "]";
+                        offset = next;
+                    // page feed ?
+                    } else if (code === 0x2C) {
+                        string += "\f";
+                    // submap
                     } else if (code === 0x3B && next < length) {
                         string += "${submap[" + buffer[next] + "]}";
                         offset = next;
+                    // character
                     } else if (code === 0x4A && next < length) {
                         string += "${character[" + buffer[next] + "]}";
                         offset = next;
-                    } else if (code === 0x24) {
-                        string += "\n";
-                    } else if (code === 0x2B) {
-                        string += "[2B " + getHex(buffer[next]) + "]";
-                        offset = next;
-                    } else if (code === 0x2C) {
-                        string += "\f";
                     } else {
                         string += "[" + getHex(code) + "]";
                     }
