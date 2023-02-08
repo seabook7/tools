@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JSON Editor</title>
+    <link href="bootstrap-5.2.3-dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container py-3">
+      <div class="row">
+        <div class="col-12 col-md-6 col-xl-3 mb-3">
+          <div class="input-group">
+            <input class="form-control" placeholder="File name" id="file-name">
+            <button class="btn btn-outline-primary" style="width:4rem;" id="open-button">Open</button>
+            <button class="btn btn-outline-primary" style="width:4rem;" id="save-button">Save</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 mb-3">
+          <div class="input-group">
+            <div class="input-group-text">
+              <input class="form-check-input" id="space-checkbox" type="checkbox" checked>
+            </div>
+            <span class="input-group-text" style="width:5.5rem;">Space:</span>
+            <input class="form-control" placeholder="4" id="space-input">
+          </div>
+        </div>
+      </div>
+      <div id="tree">
+      </div>
+    </div>
+    <script src="bootstrap-5.2.3-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/file-io.js"></script>
+    <script src="scripts/editable-tree.js"></script>
+    <script src="scripts/json-editor.js"></script>
+  </body>
+</html>
