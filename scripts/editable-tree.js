@@ -93,19 +93,39 @@ const editableTree = (function () {
         });
         return icon;
     }
-    function rebuildIndex(parentNode) {
-        const firstChild = parentNode.firstChild;
-        if (firstChild !== null) {
-            const keyText = firstChild.childNodes[1].nodeValue;
-            const key = JSON.parse(keyText.substring(0, keyText.length - 2));
-            if (typeof key === "number") {
-                const children = parentNode.childNodes;
-                let index = 0;
-                const length = children.length - 1;
-                while (index < length) {
-                    children[index].childNodes[1].nodeValue = index + ": ";
-                    index += 1;
-                }
+    function recalculateCountAndIndexes(parentNode) {
+        let valueSpan = parentNode.previousSibling;
+        while (valueSpan.nodeName !== "SPAN") {
+            valueSpan = valueSpan.previousSibling;
+        }
+        const children = parentNode.childNodes;
+        const length = children.length - 1;
+        let index;
+        if (valueSpan.title === "array") {
+            index = 0;
+            while (index < length) {
+                children[index].childNodes[1].nodeValue = index + ": ";
+                index += 1;
+            }
+            if (length === 0) {
+                valueSpan.firstChild.nodeValue = "[]";
+            }
+            if (length === 1) {
+                valueSpan.firstChild.nodeValue = "[1 element]";
+            }
+            if (length > 1) {
+                valueSpan.firstChild.nodeValue = "[" + length + " elements]";
+            }
+        }
+        if (valueSpan.title === "object") {
+            if (length === 0) {
+                valueSpan.firstChild.nodeValue = "{}";
+            }
+            if (length === 1) {
+                valueSpan.firstChild.nodeValue = "{1 member}";
+            }
+            if (length > 1) {
+                valueSpan.firstChild.nodeValue = "[" + length + " members]";
             }
         }
     }
@@ -120,7 +140,7 @@ const editableTree = (function () {
             const row = icon.parentNode;
             const parentNode = row.parentNode;
             parentNode.removeChild(row);
-            rebuildIndex(parentNode);
+            recalculateCountAndIndexes(parentNode);
         });
         return icon;
     }
