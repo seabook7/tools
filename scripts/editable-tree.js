@@ -69,50 +69,109 @@ const editableTree = (function () {
             : "-"
         );
     }
+    function getEditIcon() {
+        const icon = document.createElement("img");
+        icon.style.cursor = "pointer";
+        icon.style.marginLeft = ".5em";
+        icon.style.marginRight = ".5em";
+        icon.alt = "Edit";
+        icon.src = "images/pencil-square.svg";
+        icon.title = "Edit";
+        return icon;
+    }
+    function getInsertIcon() {
+        const icon = document.createElement("img");
+        icon.style.cursor = "pointer";
+        icon.alt = "Insert";
+        icon.src = "images/plus-square.svg";
+        icon.title = "Insert";
+        return icon;
+    }
+    function rebuildIndex(parentNode) {
+        const firstChild = parentNode.firstChild;
+        if (firstChild !== null) {
+            const keyText = firstChild.childNodes[1].nodeValue;
+            key = JSON.parse(keyText.substring(0, keyText.length - 2));
+            if (typeof key === "number") {
+                const children = parentNode.childNodes;
+                let index = 0;
+                const length = children.length - 1;
+                while (index < length) {
+                    children[index].childNodes[1].nodeValue = index + ": ";
+                    index += 1;
+                }
+            }
+        }
+    }
+    function getDeleteIcon() {
+        const icon = document.createElement("img");
+        icon.style.cursor = "pointer";
+        icon.style.marginLeft = ".5em";
+        icon.alt = "Delete";
+        icon.src = "images/dash-square.svg";
+        icon.title = "Delete";
+        icon.addEventListener("click", function () {
+            const row = icon.parentNode;
+            const parentNode = row.parentNode;
+            parentNode.removeChild(row);
+            rebuildIndex(parentNode);
+        });
+        return icon;
+    }
     let level = 0;
-    function toSpan(value, key) {
+    function from(value, key) {
         const span = document.createElement("span");
         const icon = document.createElement("img");
         const valueSpan = document.createElement("span");
         const element = new Element(value);
         if (level > 0) {
-            span.append("  ".repeat(level)); // space
+            icon.style.marginLeft = level + "em";
         }
         valueSpan.title = element.type;
-        valueSpan.append(element.getValueText() + "\n"); // value text
-        if (element.count > 0) {
+        valueSpan.append(element.getValueText()); // value text
+        if (element.count >= 0) {
             const children = document.createElement("span");
-            valueSpan.dataset.hasChildren = "true";
+            const addSpan = document.createElement("span");
+            const addIcon = document.createElement("img");
             if (level > 0) {
                 children.hidden = true;
             }
             level += 1;
             if (element.isArray) {
                 value.forEach(function (arrayElement, index) {
-                    children.append(toSpan(arrayElement, index));
+                    children.append(from(arrayElement, index));
                 });
             } else {
                 Object.entries(value).forEach(
                     function ([objectKey, objectValue]) {
-                        children.append(toSpan(objectValue, objectKey));
+                        children.append(from(objectValue, objectKey));
                     }
                 );
             }
+            addIcon.style.marginLeft = level + "em";
+            addIcon.src = "images/blank.svg";
+            addIcon.alt = " ";
+            addSpan.append(addIcon, getInsertIcon(), "\n");
+            children.append(addSpan);
             level -= 1;
             icon.style.cursor = "pointer";
-            icon.src = getTreeIconSrc(children.hidden);
             icon.alt = getTreeIconAlt(children.hidden);
+            icon.src = getTreeIconSrc(children.hidden);
             icon.addEventListener("click", function () {
                 children.hidden = !children.hidden;
-                icon.src = getTreeIconSrc(children.hidden);
                 icon.alt = getTreeIconAlt(children.hidden);
+                icon.src = getTreeIconSrc(children.hidden);
             });
             span.append(icon);
             if (key !== undefined) {
                 span.append(JSON.stringify(key) + ": "); // key text
             }
             valueSpan.style.opacity = "0.75";
-            span.append(valueSpan, children);
+            span.append(valueSpan, getEditIcon());
+            if (key !== undefined) {
+                span.append(getInsertIcon(), getDeleteIcon());
+            }
+            span.append("\n", children);
         } else {
             icon.src = "images/blank.svg";
             icon.alt = " ";
@@ -120,21 +179,57 @@ const editableTree = (function () {
             if (key !== undefined) {
                 span.append(JSON.stringify(key) + ": "); // key text
             }
-            span.append(valueSpan);
+            span.append(valueSpan, getEditIcon());
+            if (key !== undefined) {
+                span.append(getInsertIcon(), getDeleteIcon());
+            }
+            span.append("\n");
         }
         return span;
     }
-    function toValue() {
-        throw new Error();
+    function toValue(span) {
+        const nodeList = span.childNodes;
+        const lastNode = nodeList[nodeList.length - 1];
+        let valueSpan;
+        let children;
+        let key;
+        let value;
+        if (nodeList[1].nodeType === 3) {
+            const keyText = nodeList[1].nodeValue;
+            key = JSON.parse(keyText.substring(0, keyText.length - 2));
+            valueSpan = nodeList[2];
+        } else {
+            valueSpan = nodeList[1];
+        }
+        if (lastNode.nodeType === 1) {
+            children = lastNode.childNodes;
+        }
+        if (children === undefined) {
+            value = JSON.parse(valueSpan.firstChild.nodeValue);
+        } else {
+            let index;
+            const length = children.length - 1;
+            if (valueSpan.title === "array") {
+                index = 0;
+                value = new Array(length);
+                while (index < length) {
+                    value[index] = toValue(children[index]).value;
+                    index += 1;
+                }
+            } else {
+                index = 0;
+                value = {};
+                while (index < length) {
+                    const result = toValue(children[index]);
+                    value[result.key] = result.value;
+                    index += 1;
+                }
+            }
+        }
+        return {key, value};
     }
     return {
-        from(json) {
-            const tree = document.createElement("pre");
-            tree.append(toSpan(JSON.parse(json)));
-            return tree;
-        },
-        to(tree) {
-            return JSON.stringify(toValue(tree.firstChild));
-        }
+        from,
+        toValue
     };
 }());
