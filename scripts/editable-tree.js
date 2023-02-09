@@ -77,6 +77,9 @@ const editableTree = (function () {
         icon.alt = "Edit";
         icon.src = "images/pencil-square.svg";
         icon.title = "Edit";
+        icon.addEventListener("click", function () {
+            window.alert("Feature not implemented.");
+        });
         return icon;
     }
     function getInsertIcon() {
@@ -85,13 +88,16 @@ const editableTree = (function () {
         icon.alt = "Insert";
         icon.src = "images/plus-square.svg";
         icon.title = "Insert";
+        icon.addEventListener("click", function () {
+            window.alert("Feature not implemented.");
+        });
         return icon;
     }
     function rebuildIndex(parentNode) {
         const firstChild = parentNode.firstChild;
         if (firstChild !== null) {
             const keyText = firstChild.childNodes[1].nodeValue;
-            key = JSON.parse(keyText.substring(0, keyText.length - 2));
+            const key = JSON.parse(keyText.substring(0, keyText.length - 2));
             if (typeof key === "number") {
                 const children = parentNode.childNodes;
                 let index = 0;
