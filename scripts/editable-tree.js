@@ -125,7 +125,7 @@ const editableTree = (function () {
                 valueSpan.firstChild.nodeValue = "{1 member}";
             }
             if (length > 1) {
-                valueSpan.firstChild.nodeValue = "[" + length + " members]";
+                valueSpan.firstChild.nodeValue = "{" + length + " members}";
             }
         }
     }
