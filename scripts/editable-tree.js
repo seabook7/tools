@@ -100,9 +100,8 @@ const editableTree = (function () {
         }
         const children = parentNode.childNodes;
         const length = children.length - 1;
-        let index;
         if (valueSpan.title === "array") {
-            index = 0;
+            let index = 0;
             while (index < length) {
                 children[index].childNodes[1].nodeValue = index + ": ";
                 index += 1;
