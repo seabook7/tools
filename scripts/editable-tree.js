@@ -1,230 +1,236 @@
-/*jslint browser, this*/
+/*jslint browser*/
 const editableTree = (function () {
-    // Non-public class, defined using simple method.
-    function Element(value) {
+    function getType(value) {
         const type = typeof value;
-        this.value = value;
         switch (type) {
         case "string":
         case "number":
-            this.type = type;
-            this.count = -1;
-            this.isArray = false;
-            break;
+            return type;
         case "boolean":
-            this.type = (
+            return (
                 value
                 ? "\"true\""
                 : "\"false\""
             );
-            this.count = -1;
-            this.isArray = false;
-            break;
         case "object":
             if (value === null) {
-                this.type = "\"null\"";
-                this.count = -1;
-                this.isArray = false;
+                return "\"null\"";
             } else if (Array.isArray(value)) {
-                this.type = "array";
-                this.count = value.length;
-                this.isArray = true;
+                return "array";
             } else {
-                this.type = type;
-                this.count = Object.keys(value).length;
-                this.isArray = false;
+                return type;
             }
-            break;
         }
     }
-    Element.prototype.getValueText = function () {
-        const count = this.count;
-        if (count > 0) {
-            if (this.isArray) {
-                return "[" + count + (
-                    count === 1
-                    ? " element]"
-                    : " elements]"
-                );
+    let level = 0;
+    function setCountText(valueSpan, length) {
+        if (valueSpan.title === "array") {
+            switch (length) {
+            case 0:
+                valueSpan.replaceChildren("[]");
+                break;
+            case 1:
+                valueSpan.replaceChildren("[1 element]");
+                break;
+            default:
+                valueSpan.replaceChildren("[" + length + " elements]");
             }
-            return "{" + count + (
-                count === 1
-                ? " member}"
-                : " members}"
+        } else {
+            switch (length) {
+            case 0:
+                valueSpan.replaceChildren("{}");
+                break;
+            case 1:
+                valueSpan.replaceChildren("{1 member}");
+                break;
+            default:
+                valueSpan.replaceChildren("{" + length + " members}");
+            }
+        }
+    }
+    function createTreeIcon(valueSpan, parentNode) {
+        const icon = document.createElement("img");
+        if (level > 0) {
+            icon.src = "images/caret-right.svg";
+            icon.alt = "+";
+            setCountText(valueSpan, parentNode.childNodes.length - 2);
+            parentNode.hidden = true;
+        } else {
+            icon.src = "images/caret-down.svg";
+            icon.alt = "-";
+            valueSpan.append(
+                valueSpan.title === "array"
+                ? "["
+                : "{"
             );
         }
-        return JSON.stringify(this.value);
-    };
-    function getTreeIconSrc(isCollapsed) {
-        return (
-            isCollapsed
-            ? "images/caret-right.svg"
-            : "images/caret-down.svg"
-        );
+        icon.style.cursor = "pointer";
+        if (level > 0) {
+            icon.style.marginLeft = level + "em";
+        }
+        icon.addEventListener("click", function () {
+            parentNode.hidden = !parentNode.hidden;
+            if (parentNode.hidden) {
+                icon.src = "images/caret-right.svg";
+                icon.alt = "+";
+                setCountText(valueSpan, parentNode.childNodes.length - 2);
+            } else {
+                icon.src = "images/caret-down.svg";
+                icon.alt = "-";
+                valueSpan.firstChild.nodeValue = (
+                    valueSpan.title === "array"
+                    ? "["
+                    : "{"
+                );
+            }
+        });
+        return icon;
     }
-    function getTreeIconAlt(isCollapsed) {
-        return (
-            isCollapsed
-            ? "+"
-            : "-"
-        );
-    }
-    function getEditIcon() {
+    function createBlankIcon() {
         const icon = document.createElement("img");
+        icon.src = "images/blank.svg";
+        icon.alt = " ";
+        if (level > 0) {
+            icon.style.marginLeft = level + "em";
+        }
+        return icon;
+    }
+    function createEditIcon() {
+        const icon = document.createElement("img");
+        icon.src = "images/pencil-square.svg";
+        icon.alt = "Edit";
+        icon.title = "Edit";
         icon.style.cursor = "pointer";
         icon.style.marginLeft = ".5em";
         icon.style.marginRight = ".5em";
-        icon.alt = "Edit";
-        icon.src = "images/pencil-square.svg";
-        icon.title = "Edit";
         icon.addEventListener("click", function () {
             window.alert("Feature not implemented.");
         });
         return icon;
     }
-    function getInsertIcon() {
+    function createInsertIcon() {
         const icon = document.createElement("img");
-        icon.style.cursor = "pointer";
-        icon.alt = "Insert";
         icon.src = "images/plus-square.svg";
+        icon.alt = "Insert";
         icon.title = "Insert";
+        icon.style.cursor = "pointer";
         icon.addEventListener("click", function () {
             window.alert("Feature not implemented.");
         });
         return icon;
     }
-    function recalculateCountAndIndexes(parentNode) {
+    function createAddSpan() {
+        const span = document.createElement("span");
+        span.append(createBlankIcon(), createInsertIcon(), "\n");
+        return span;
+    }
+    function createEndSpan(type, isArray) {
+        const span = document.createElement("span");
+        span.title = type;
+        span.append(createBlankIcon(), (
+            isArray
+            ? "]"
+            : "}"
+        ) + "\n");
+        return span;
+    }
+    function resetIndexes(parentNode) {
         let valueSpan = parentNode.previousSibling;
         while (valueSpan.nodeName !== "SPAN") {
             valueSpan = valueSpan.previousSibling;
         }
-        const children = parentNode.childNodes;
-        const length = children.length - 1;
         if (valueSpan.title === "array") {
+            const children = parentNode.childNodes;
             let index = 0;
+            const length = children.length - 2;
             while (index < length) {
                 children[index].childNodes[1].nodeValue = index + ": ";
                 index += 1;
             }
-            if (length === 0) {
-                valueSpan.firstChild.nodeValue = "[]";
-            }
-            if (length === 1) {
-                valueSpan.firstChild.nodeValue = "[1 element]";
-            }
-            if (length > 1) {
-                valueSpan.firstChild.nodeValue = "[" + length + " elements]";
-            }
-        }
-        if (valueSpan.title === "object") {
-            if (length === 0) {
-                valueSpan.firstChild.nodeValue = "{}";
-            }
-            if (length === 1) {
-                valueSpan.firstChild.nodeValue = "{1 member}";
-            }
-            if (length > 1) {
-                valueSpan.firstChild.nodeValue = "{" + length + " members}";
-            }
         }
     }
-    function getDeleteIcon() {
+    function createDeleteIcon() {
         const icon = document.createElement("img");
+        icon.src = "images/dash-square.svg";
+        icon.alt = "Delete";
+        icon.title = "Delete";
         icon.style.cursor = "pointer";
         icon.style.marginLeft = ".5em";
-        icon.alt = "Delete";
-        icon.src = "images/dash-square.svg";
-        icon.title = "Delete";
         icon.addEventListener("click", function () {
-            const row = icon.parentNode;
-            const parentNode = row.parentNode;
-            parentNode.removeChild(row);
-            recalculateCountAndIndexes(parentNode);
+            const child = icon.parentNode;
+            const parentNode = child.parentNode;
+            parentNode.removeChild(child);
+            resetIndexes(parentNode);
         });
         return icon;
     }
-    let level = 0;
     function from(value, key) {
         const span = document.createElement("span");
-        const icon = document.createElement("img");
         const valueSpan = document.createElement("span");
-        const element = new Element(value);
-        if (level > 0) {
-            icon.style.marginLeft = level + "em";
-        }
-        valueSpan.title = element.type;
-        valueSpan.append(element.getValueText()); // value text
-        if (element.count >= 0) {
-            const children = document.createElement("span");
-            const addSpan = document.createElement("span");
-            const addIcon = document.createElement("img");
-            if (level > 0) {
-                children.hidden = true;
-            }
+        const type = getType(value);
+        const isArray = type === "array";
+        const isObject = isArray || type === "object";
+        let parentNode;
+        valueSpan.title = type;
+        if (isObject) {
+            parentNode = document.createElement("span");
             level += 1;
-            if (element.isArray) {
-                value.forEach(function (arrayElement, index) {
-                    children.append(from(arrayElement, index));
+            if (isArray) {
+                value.forEach(function (element, index) {
+                    parentNode.append(from(element, index));
                 });
             } else {
-                Object.entries(value).forEach(
-                    function ([objectKey, objectValue]) {
-                        children.append(from(objectValue, objectKey));
-                    }
-                );
+                Object.entries(
+                    value
+                ).forEach(function ([objectKey, objectValue]) {
+                    parentNode.append(from(objectValue, objectKey));
+                });
             }
-            addIcon.style.marginLeft = level + "em";
-            addIcon.src = "images/blank.svg";
-            addIcon.alt = " ";
-            addSpan.append(addIcon, getInsertIcon(), "\n");
-            children.append(addSpan);
+            parentNode.append(createAddSpan());
             level -= 1;
-            icon.style.cursor = "pointer";
-            icon.alt = getTreeIconAlt(children.hidden);
-            icon.src = getTreeIconSrc(children.hidden);
-            icon.addEventListener("click", function () {
-                children.hidden = !children.hidden;
-                icon.alt = getTreeIconAlt(children.hidden);
-                icon.src = getTreeIconSrc(children.hidden);
-            });
-            span.append(icon);
-            if (key !== undefined) {
-                span.append(JSON.stringify(key) + ": "); // key text
-            }
-            valueSpan.style.opacity = "0.75";
-            span.append(valueSpan, getEditIcon());
-            if (key !== undefined) {
-                span.append(getInsertIcon(), getDeleteIcon());
-            }
-            span.append("\n", children);
+            parentNode.append(createEndSpan(type, isArray));
+            // createTreeIcon also set value's text
+            span.append(createTreeIcon(valueSpan, parentNode));
         } else {
-            icon.src = "images/blank.svg";
-            icon.alt = " ";
-            span.append(icon);
-            if (key !== undefined) {
-                span.append(JSON.stringify(key) + ": "); // key text
-            }
-            span.append(valueSpan, getEditIcon());
-            if (key !== undefined) {
-                span.append(getInsertIcon(), getDeleteIcon());
-            }
-            span.append("\n");
+            span.append(createBlankIcon());
+            // set value's text
+            valueSpan.append(JSON.stringify(value));
+        }
+        if (key !== undefined) {
+            span.append(
+                // set key's text
+                JSON.stringify(key) + ": ",
+                valueSpan,
+                createEditIcon(),
+                createInsertIcon(),
+                createDeleteIcon()
+            );
+        } else {
+            span.append(
+                valueSpan,
+                createEditIcon()
+            );
+        }
+        span.append("\n");
+        if (isObject) {
+            span.append(parentNode);
         }
         return span;
     }
     function toValue(span) {
         const nodeList = span.childNodes;
-        const lastNode = nodeList[nodeList.length - 1];
         let valueSpan;
         let children;
         let key;
         let value;
-        if (nodeList[1].nodeType === 3) {
-            const keyText = nodeList[1].nodeValue;
+        const node1 = nodeList[1];
+        const lastNode = nodeList[nodeList.length - 1];
+        if (node1.nodeType === 3) {
+            const keyText = node1.nodeValue;
             key = JSON.parse(keyText.substring(0, keyText.length - 2));
             valueSpan = nodeList[2];
         } else {
-            valueSpan = nodeList[1];
+            valueSpan = node1;
         }
         if (lastNode.nodeType === 1) {
             children = lastNode.childNodes;
@@ -232,17 +238,15 @@ const editableTree = (function () {
         if (children === undefined) {
             value = JSON.parse(valueSpan.firstChild.nodeValue);
         } else {
-            let index;
-            const length = children.length - 1;
+            let index = 0;
+            const length = children.length - 2;
             if (valueSpan.title === "array") {
-                index = 0;
                 value = new Array(length);
                 while (index < length) {
                     value[index] = toValue(children[index]).value;
                     index += 1;
                 }
             } else {
-                index = 0;
                 value = {};
                 while (index < length) {
                     const result = toValue(children[index]);

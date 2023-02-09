@@ -12,6 +12,7 @@
         <div class="col-12 col-md-6 col-xl-3 mb-3">
           <div class="input-group">
             <input class="form-control" placeholder="File name" id="file-name">
+            <button class="btn btn-outline-primary" style="width:4rem;" data-bs-toggle="modal" data-bs-target="#editModal" disabled>New</button>
             <button class="btn btn-outline-primary" style="width:4rem;" id="open-button">Open</button>
             <button class="btn btn-outline-primary" style="width:4rem;" id="save-button">Save</button>
           </div>
@@ -21,7 +22,9 @@
             <div class="input-group-text">
               <input class="form-check-input" id="space-checkbox" type="checkbox" checked>
             </div>
-            <span class="input-group-text">Space for save:</span>
+            <span class="input-group-text">
+              <label class="form-check-label" for="space-checkbox">Space for save:</label>
+            </span>
             <input class="form-control" placeholder="4" id="space-input">
           </div>
         </div>
