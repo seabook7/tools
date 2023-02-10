@@ -1,67 +1,87 @@
 /*jslint browser*/
 const editableTree = (function () {
-    function getType(value) {
+    const elementType = (function () {
+        function create(name, defaultValue, isCollection, editable) {
+            return {defaultValue, editable, isCollection, name};
+        }
+        return [
+            create("object", "{}", true, false),
+            create("array", "[]", true, false),
+            create("string", "\"\"", false, true),
+            create("number", "0", false, true),
+            create("\"true\"", "true", false, false),
+            create("\"false\"", "false", false, false),
+            create("\"null\"", "null", false, false)
+        ];
+    }());
+    function getTypeIndex(value) {
         const type = typeof value;
         switch (type) {
         case "string":
+            return 2;
         case "number":
-            return type;
+            return 3;
         case "boolean":
             return (
                 value
-                ? "\"true\""
-                : "\"false\""
+                ? 4
+                : 5
             );
         case "object":
             if (value === null) {
-                return "\"null\"";
+                return 6;
             } else if (Array.isArray(value)) {
-                return "array";
+                return 1;
             } else {
-                return type;
+                return 0;
             }
         }
     }
     let level = 0;
-    function setCountText(valueSpan, length) {
-        if (valueSpan.title === "array") {
-            switch (length) {
-            case 0:
-                valueSpan.replaceChildren("[]");
-                break;
-            case 1:
-                valueSpan.replaceChildren("[1 element]");
-                break;
-            default:
-                valueSpan.replaceChildren("[" + length + " elements]");
-            }
-        } else {
-            switch (length) {
-            case 0:
-                valueSpan.replaceChildren("{}");
-                break;
-            case 1:
-                valueSpan.replaceChildren("{1 member}");
-                break;
-            default:
-                valueSpan.replaceChildren("{" + length + " members}");
-            }
+    function setObjectText(valueSpan, length) {
+        switch (length) {
+        case 0:
+            valueSpan.replaceChildren("{}");
+            break;
+        case 1:
+            valueSpan.replaceChildren("{1 member}");
+            break;
+        default:
+            valueSpan.replaceChildren("{" + length + " members}");
+        }
+    }
+    function setArrayText(valueSpan, length) {
+        switch (length) {
+        case 0:
+            valueSpan.replaceChildren("[]");
+            break;
+        case 1:
+            valueSpan.replaceChildren("[1 element]");
+            break;
+        default:
+            valueSpan.replaceChildren("[" + length + " elements]");
         }
     }
     function createTreeIcon(valueSpan, parentNode) {
         const icon = document.createElement("img");
+        const isObject = valueSpan.dataset.typeIndex === "0";
         if (level > 0) {
+            const length = parentNode.childNodes.length - 2;
             icon.src = "images/caret-right.svg";
             icon.alt = "+";
-            setCountText(valueSpan, parentNode.childNodes.length - 2);
+            if (isObject) {
+                setObjectText(valueSpan, length);
+            } else {
+                setArrayText(valueSpan, length);
+            }
             parentNode.hidden = true;
         } else {
             icon.src = "images/caret-down.svg";
             icon.alt = "-";
             valueSpan.append(
-                valueSpan.title === "array"
-                ? "["
-                : "{"
+                isObject
+                ? "{"
+                : "["
             );
         }
         icon.style.cursor = "pointer";
@@ -71,16 +91,21 @@ const editableTree = (function () {
         icon.addEventListener("click", function () {
             parentNode.hidden = !parentNode.hidden;
             if (parentNode.hidden) {
+                const newLength = parentNode.childNodes.length - 2;
                 icon.src = "images/caret-right.svg";
                 icon.alt = "+";
-                setCountText(valueSpan, parentNode.childNodes.length - 2);
+                if (isObject) {
+                    setObjectText(valueSpan, newLength);
+                } else {
+                    setArrayText(valueSpan, newLength);
+                }
             } else {
                 icon.src = "images/caret-down.svg";
                 icon.alt = "-";
                 valueSpan.firstChild.nodeValue = (
-                    valueSpan.title === "array"
-                    ? "["
-                    : "{"
+                    isObject
+                    ? "{"
+                    : "["
                 );
             }
         });
@@ -95,6 +120,78 @@ const editableTree = (function () {
         }
         return icon;
     }
+    const nameInput = (function () {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "form-control";
+        input.title = "name";
+        return input;
+    }());
+    const valueInput = (function () {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "form-control";
+        input.title = "value";
+        return input;
+    }());
+    const typeSelect = (function () {
+        const select = document.createElement("select");
+        select.className = "form-select";
+        select.title = "type";
+        elementType.forEach(function (type) {
+            const option = document.createElement("option");
+            option.append(type.name);
+            select.append(option);
+        });
+        select.addEventListener("change", function () {
+            const type = elementType[select.selectedIndex];
+            valueInput.value = type.defaultValue;
+            valueInput.disabled = !type.editable;
+        });
+        return select;
+    }());
+    const okButton = (function () {
+        const button = document.createElement("button");
+        button.className = "btn btn-outline-success p-0";
+        button.type = "button";
+        button.append("✔");
+        return button;
+    }());
+    const editingDiv = (function () {
+        const div = document.createElement("div");
+        const inputGroup = document.createElement("div");
+        div.className = "position-fixed";
+        inputGroup.className = "input-group input-group-sm";
+        inputGroup.append(nameInput, typeSelect, valueInput, okButton);
+        div.addEventListener("click", function (event) {
+            event.stopPropagation();
+        });
+        div.append(inputGroup);
+        return div;
+    }());
+    function edit(name, typeIndex, value, x, y) {
+        const type = elementType[typeIndex];
+        // name input
+        nameInput.disabled = typeof name !== "string";
+        nameInput.value = (
+            name === undefined
+            ? ""
+            : name
+        );
+        // type select
+        typeSelect.selectedIndex = typeIndex;
+        // value input
+        valueInput.disabled = !type.editable;
+        valueInput.value = (
+            type.editable
+            ? value
+            : type.defaultValue
+        );
+        // editing div
+        editingDiv.style.left = x + "px";
+        editingDiv.style.top = y + "px";
+        document.body.append(editingDiv);
+    }
     function createEditIcon() {
         const icon = document.createElement("img");
         icon.src = "images/pencil-square.svg";
@@ -103,8 +200,20 @@ const editableTree = (function () {
         icon.style.cursor = "pointer";
         icon.style.marginLeft = ".5em";
         icon.style.marginRight = ".5em";
-        icon.addEventListener("click", function () {
-            window.alert("Feature not implemented.");
+        icon.addEventListener("click", function (event) {
+            const nodeList = icon.parentNode.childNodes;
+            let valueSpan;
+            let name;
+            const node1 = nodeList[1];
+            if (node1.nodeType === 3) {
+                const keyText = node1.nodeValue;
+                name = JSON.parse(keyText.substring(0, keyText.length - 2));
+                valueSpan = nodeList[2];
+            } else {
+                valueSpan = node1;
+            }
+            edit(name, valueSpan.dataset.typeIndex, valueSpan.firstChild.nodeValue, event.x, event.y);
+            event.stopPropagation();
         });
         return icon;
     }
@@ -124,13 +233,13 @@ const editableTree = (function () {
         span.append(createBlankIcon(), createInsertIcon(), "\n");
         return span;
     }
-    function createEndSpan(type, isArray) {
+    function createEndSpan(typeName, isObject) {
         const span = document.createElement("span");
-        span.title = type;
+        span.title = typeName;
         span.append(createBlankIcon(), (
-            isArray
-            ? "]"
-            : "}"
+            isObject
+            ? "}"
+            : "]"
         ) + "\n");
         return span;
     }
@@ -139,7 +248,7 @@ const editableTree = (function () {
         while (valueSpan.nodeName !== "SPAN") {
             valueSpan = valueSpan.previousSibling;
         }
-        if (valueSpan.title === "array") {
+        if (valueSpan.dataset.typeIndex === "1") {
             const children = parentNode.childNodes;
             let index = 0;
             const length = children.length - 2;
@@ -167,28 +276,31 @@ const editableTree = (function () {
     function from(value, key) {
         const span = document.createElement("span");
         const valueSpan = document.createElement("span");
-        const type = getType(value);
-        const isArray = type === "array";
-        const isObject = isArray || type === "object";
+        const typeIndex = getTypeIndex(value);
+        const type = elementType[typeIndex];
+        const typeName = type.name;
+        const isCollection = type.isCollection;
+        const isObject = typeIndex === 0;
         let parentNode;
-        valueSpan.title = type;
-        if (isObject) {
+        valueSpan.title = typeName;
+        valueSpan.dataset.typeIndex = typeIndex;
+        if (isCollection) {
             parentNode = document.createElement("span");
             level += 1;
-            if (isArray) {
-                value.forEach(function (element, index) {
-                    parentNode.append(from(element, index));
-                });
-            } else {
+            if (isObject) {
                 Object.entries(
                     value
                 ).forEach(function ([objectKey, objectValue]) {
                     parentNode.append(from(objectValue, objectKey));
                 });
+            } else {
+                value.forEach(function (element, index) {
+                    parentNode.append(from(element, index));
+                });
             }
             parentNode.append(createAddSpan());
             level -= 1;
-            parentNode.append(createEndSpan(type, isArray));
+            parentNode.append(createEndSpan(typeName, isObject));
             // createTreeIcon also set value's text
             span.append(createTreeIcon(valueSpan, parentNode));
         } else {
@@ -212,7 +324,7 @@ const editableTree = (function () {
             );
         }
         span.append("\n");
-        if (isObject) {
+        if (isCollection) {
             span.append(parentNode);
         }
         return span;
@@ -240,23 +352,26 @@ const editableTree = (function () {
         } else {
             let index = 0;
             const length = children.length - 2;
-            if (valueSpan.title === "array") {
-                value = new Array(length);
-                while (index < length) {
-                    value[index] = toValue(children[index]).value;
-                    index += 1;
-                }
-            } else {
+            if (valueSpan.dataset.typeIndex === "0") {
                 value = {};
                 while (index < length) {
                     const result = toValue(children[index]);
                     value[result.key] = result.value;
                     index += 1;
                 }
+            } else {
+                value = new Array(length);
+                while (index < length) {
+                    value[index] = toValue(children[index]).value;
+                    index += 1;
+                }
             }
         }
         return {key, value};
     }
+    window.addEventListener("click", function () {
+        editingDiv.remove();
+    });
     return {
         from,
         toValue
