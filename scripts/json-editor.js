@@ -7,6 +7,15 @@ const saveButton = document.getElementById("save-button");
 const spaceCheckbox = document.getElementById("space-checkbox");
 const spaceInput = document.getElementById("space-input");
 const tree = document.getElementById("tree");
+const spinner = (function () {
+    const div = document.createElement("div");
+    const span = document.createElement("span");
+    div.className = "spinner-border text-primary";
+    span.className = "visually-hidden";
+    span.append("loading...");
+    div.append(span);
+    return div;
+}());
 function getBlob(value) {
     let space = spaceInput.value;
     const int = (
@@ -33,8 +42,11 @@ newButton.addEventListener("click", function (event) {
 openButton.addEventListener("click", async function () {
     const file = await fileIO.open("application/json");
     fileName.value = file.name;
+    tree.replaceChildren();
+    tree.parentNode.append(spinner);
     try {
         const value = JSON.parse(await file.text());
+        spinner.remove();
         tree.replaceChildren(editableTree.from(value));
     } catch (error) {
         window.alert(error.message);
