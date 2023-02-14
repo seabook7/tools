@@ -190,7 +190,7 @@ const editableTree = (function () {
         let offsetX;
         let offsetY;
         let isMousedown;
-        div.className = "card position-fixed shadow";
+        div.className = "card position-fixed shadow glass-background";
         editingCardHeader.addEventListener("mousedown", function (event) {
             if (event.button === 0) {
                 isMousedown = true;
