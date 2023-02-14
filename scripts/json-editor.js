@@ -1,6 +1,7 @@
 /*jslint browser*/
 /*global fileIO, editableTree*/
 const fileName = document.getElementById("file-name");
+const newButton = document.getElementById("new-button");
 const openButton = document.getElementById("open-button");
 const saveButton = document.getElementById("save-button");
 const spaceCheckbox = document.getElementById("space-checkbox");
@@ -24,6 +25,11 @@ function getBlob(value) {
     );
 }
 spaceInput.disabled = !spaceCheckbox.checked;
+newButton.addEventListener("click", function (event) {
+    const {left, top} = newButton.getBoundingClientRect();
+    editableTree.newJSON(tree, left, top + newButton.clientHeight + 4);
+    event.stopPropagation();
+});
 openButton.addEventListener("click", async function () {
     const file = await fileIO.open("application/json");
     fileName.value = file.name;
@@ -40,7 +46,9 @@ saveButton.addEventListener("click", function () {
 });
 spaceCheckbox.addEventListener("click", function () {
     spaceInput.disabled = !spaceCheckbox.checked;
-    if (!spaceCheckbox.checked) {
-        spaceInput.value = "";
-    }
+    spaceInput.value = (
+        spaceCheckbox.checked
+        ? ""
+        : "disabled"
+    );
 });
