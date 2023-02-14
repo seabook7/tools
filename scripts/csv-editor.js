@@ -107,7 +107,6 @@
             parseInt(columnsCountInput.value)
         ));
     }
-    fileNameInput.value = "New.txt";
     newButton.addEventListener("click", createNew);
     openButton.addEventListener("click", async function () {
         const file = await fileIO.open("text/csv,text/plain");
