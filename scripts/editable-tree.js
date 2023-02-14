@@ -169,11 +169,11 @@ const editableTree = (function () {
         const select = document.createElement("select");
         select.id = "type-select";
         select.className = "form-select mb-3";
-        elementType.forEach(function (type) {
+        select.append(...elementType.map(function (type) {
             const option = document.createElement("option");
             option.append(type.name);
-            select.append(option);
-        });
+            return option;
+        }));
         select.addEventListener("change", function () {
             const type = elementType[select.selectedIndex];
             valueInput.value = type.defaultValue;
