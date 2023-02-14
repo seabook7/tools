@@ -130,6 +130,14 @@ const editableTree = (function () {
         label.append(text);
         return label;
     }
+    function createOKButton() {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-outline-success";
+        button.style.width = "4rem";
+        button.append("OK");
+        return button;
+    }
     const closeButton = (function () {
         const button = document.createElement("button");
         button.type = "button";
@@ -256,73 +264,65 @@ const editableTree = (function () {
             }
         }
     }
+    function getName(json) {
+        const name = JSON.parse(json);
+        if (getTypeIndex(name) !== 2) {
+            throw new TypeError("Name must be a string.");
+        }
+        return name;
+    }
     function createNewButton(treeNode) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "btn btn-outline-success";
-        button.style.width = "4rem";
-        button.append("OK");
+        const button = createOKButton();
         button.addEventListener("click", function () {
-            let newSpan;
             try {
-                newSpan = from(JSON.parse(valueInput.value));
+                treeNode.replaceChildren(from(JSON.parse(valueInput.value)));
+                editingCard.remove();
             } catch (error) {
                 window.alert(error.message);
-                return;
             }
-            editingCard.remove();
-            treeNode.replaceChildren(newSpan);
         });
         return button;
     }
     function createEditButton(span) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "btn btn-outline-success";
-        button.style.width = "4rem";
-        button.append("OK");
+        const button = createOKButton();
         button.addEventListener("click", function () {
-            let newSpan;
             try {
-                newSpan = from(
+                span.parentNode.replaceChild(from(
                     JSON.parse(valueInput.value),
-                    JSON.parse(nameInput.value),
+                    (
+                        nameInput.disabled
+                        ? JSON.parse(nameInput.value)
+                        : getName(nameInput.value)
+                    ),
                     JSON.parse(span.dataset.level)
-                );
+                ), span);
+                editingCard.remove();
             } catch (error) {
                 window.alert(error.message);
-                return;
             }
-            const marginLeft = span.firstChild.style.marginLeft;
-            newSpan.firstChild.style.marginLeft = marginLeft;
-            span.parentNode.replaceChild(newSpan, span);
-            editingCard.remove();
         });
         return button;
     }
-    function createInsertButton(span) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "btn btn-outline-success";
-        button.style.width = "4rem";
-        button.append("OK");
+    function createInsertButton(span, needResetIndexes) {
+        const button = createOKButton();
         button.addEventListener("click", function () {
-            let newSpan;
             try {
-                newSpan = from(
+                span.parentNode.insertBefore(from(
                     JSON.parse(valueInput.value),
-                    JSON.parse(nameInput.value),
+                    (
+                        nameInput.disabled
+                        ? JSON.parse(nameInput.value)
+                        : getName(nameInput.value)
+                    ),
                     JSON.parse(span.dataset.level)
-                );
+                ), span);
+                editingCard.remove();
+                if (needResetIndexes) {
+                    resetIndexes(span.parentNode);
+                }
             } catch (error) {
                 window.alert(error.message);
-                return;
             }
-            const marginLeft = span.firstChild.style.marginLeft;
-            newSpan.firstChild.style.marginLeft = marginLeft;
-            span.parentNode.insertBefore(newSpan, span);
-            editingCard.remove();
-            resetIndexes(span.parentNode);
         });
         return button;
     }
@@ -394,7 +394,7 @@ const editableTree = (function () {
             }
             typeIndex = valueSpan.dataset.typeIndex;
             editingCardHeader.replaceChildren("Insert", closeButton);
-            okButton = createInsertButton(span);
+            okButton = createInsertButton(span, true);
             editingCardFooter.replaceChildren(okButton);
             edit(name, typeIndex, undefined, event.x, event.y);
             event.stopPropagation();
