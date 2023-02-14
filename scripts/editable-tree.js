@@ -5,8 +5,8 @@ const editableTree = (function () {
             return {defaultValue, editable, isCollection, name};
         }
         return [
-            create("object", "{}", true, false),
-            create("array", "[]", true, false),
+            create("object", "{}", true, true),
+            create("array", "[]", true, true),
             create("string", "\"\"", false, true),
             create("number", "0", false, true),
             create("\"true\"", "true", false, false),
@@ -37,7 +37,6 @@ const editableTree = (function () {
             }
         }
     }
-    let level = 0;
     function setObjectText(valueSpan, length) {
         switch (length) {
         case 0:
@@ -62,7 +61,7 @@ const editableTree = (function () {
             valueSpan.replaceChildren("[" + length + " elements]");
         }
     }
-    function createTreeIcon(valueSpan, parentNode) {
+    function createTreeIcon(valueSpan, parentNode, level) {
         const icon = document.createElement("img");
         const isObject = valueSpan.dataset.typeIndex === "0";
         if (level > 0) {
@@ -111,7 +110,7 @@ const editableTree = (function () {
         });
         return icon;
     }
-    function createBlankIcon() {
+    function createBlankIcon(level) {
         const icon = document.createElement("img");
         icon.src = "images/blank.svg";
         icon.alt = " ";
@@ -120,24 +119,48 @@ const editableTree = (function () {
         }
         return icon;
     }
+    function createDiv(className) {
+        const div = document.createElement("div");
+        div.className = className;
+        return div;
+    }
+    function createLabel(htmlFor, text) {
+        const label = document.createElement("label");
+        label.htmlFor = htmlFor;
+        label.append(text);
+        return label;
+    }
+    const closeButton = (function () {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn-close float-end";
+        button.addEventListener("click", function () {
+            editingCard.remove();
+        });
+        return button;
+    }());
+    const editingCardHeader = createDiv("card-header user-select-none");
     const nameInput = (function () {
         const input = document.createElement("input");
         input.type = "text";
-        input.className = "form-control";
-        input.title = "name";
+        input.id = "name-input";
+        input.className = "form-control mb-3";
         return input;
     }());
+    const nameLabel = createLabel(nameInput.id, "Name:");
+    const indexLabel = createLabel(nameInput.id, "Index:");
     const valueInput = (function () {
         const input = document.createElement("input");
         input.type = "text";
+        input.id = "value-input";
         input.className = "form-control";
-        input.title = "value";
         return input;
     }());
+    const valueLabel = createLabel(valueInput.id, "Value:");
     const typeSelect = (function () {
         const select = document.createElement("select");
-        select.className = "form-select";
-        select.title = "type";
+        select.id = "type-select";
+        select.className = "form-select mb-3";
         elementType.forEach(function (type) {
             const option = document.createElement("option");
             option.append(type.name);
@@ -150,98 +173,73 @@ const editableTree = (function () {
         });
         return select;
     }());
-    const okButton = (function () {
-        const button = document.createElement("button");
-        button.className = "btn btn-outline-success p-0";
-        button.type = "button";
-        button.append("✔");
-        return button;
-    }());
-    const editingDiv = (function () {
+    const typeLabel = createLabel(typeSelect.id, "Type:");
+    const editingCardBody = createDiv("card-body");
+    let okButton;
+    const editingCardFooter = createDiv("card-footer text-end");
+    const editingCard = (function () {
         const div = document.createElement("div");
-        const inputGroup = document.createElement("div");
-        div.className = "position-fixed";
-        inputGroup.className = "input-group input-group-sm";
-        inputGroup.append(nameInput, typeSelect, valueInput, okButton);
+        let offsetX;
+        let offsetY;
+        let isMousedown;
+        div.className = "card position-fixed shadow";
+        editingCardHeader.addEventListener("mousedown", function (event) {
+            if (event.button === 0) {
+                isMousedown = true;
+                offsetX = event.offsetX;
+                offsetY = event.offsetY;
+            }
+        });
+        editingCardHeader.addEventListener("mousemove", function (event) {
+            if (isMousedown) {
+                div.style.left = event.x - offsetX + "px";
+                div.style.top = event.y - offsetY + "px";
+            }
+        });
+        editingCardHeader.addEventListener("mouseup", function () {
+            isMousedown = false;
+        });
+        editingCardHeader.addEventListener("mouseout", function () {
+            isMousedown = false;
+        });
         div.addEventListener("click", function (event) {
             event.stopPropagation();
         });
-        div.append(inputGroup);
+        div.append(editingCardHeader, editingCardBody, editingCardFooter);
         return div;
     }());
+    const body = document.body;
     function edit(name, typeIndex, value, x, y) {
         const type = elementType[typeIndex];
+        editingCardBody.replaceChildren();
         // name input
-        nameInput.disabled = typeof name !== "string";
-        nameInput.value = (
-            name === undefined
-            ? ""
-            : name
-        );
+        if (name === undefined) {
+            nameInput.value = "";
+        } else {
+            nameInput.value = name;
+            if (typeof JSON.parse(name) === "string") {
+                nameInput.disabled = false;
+                editingCardBody.append(nameLabel);
+            } else {
+                nameInput.disabled = true;
+                editingCardBody.append(indexLabel);
+            }
+            editingCardBody.append(nameInput);
+        }
         // type select
         typeSelect.selectedIndex = typeIndex;
         // value input
-        valueInput.disabled = !type.editable;
         valueInput.value = (
-            type.editable
-            ? value
-            : type.defaultValue
+            (value === undefined || !type.editable)
+            ? type.defaultValue
+            : value
         );
-        // editing div
-        editingDiv.style.left = x + "px";
-        editingDiv.style.top = y + "px";
-        document.body.append(editingDiv);
-    }
-    function createEditIcon() {
-        const icon = document.createElement("img");
-        icon.src = "images/pencil-square.svg";
-        icon.alt = "Edit";
-        icon.title = "Edit";
-        icon.style.cursor = "pointer";
-        icon.style.marginLeft = ".5em";
-        icon.style.marginRight = ".5em";
-        icon.addEventListener("click", function (event) {
-            const nodeList = icon.parentNode.childNodes;
-            let valueSpan;
-            let name;
-            const node1 = nodeList[1];
-            if (node1.nodeType === 3) {
-                const keyText = node1.nodeValue;
-                name = JSON.parse(keyText.substring(0, keyText.length - 2));
-                valueSpan = nodeList[2];
-            } else {
-                valueSpan = node1;
-            }
-            edit(name, valueSpan.dataset.typeIndex, valueSpan.firstChild.nodeValue, event.x, event.y);
-            event.stopPropagation();
-        });
-        return icon;
-    }
-    function createInsertIcon() {
-        const icon = document.createElement("img");
-        icon.src = "images/plus-square.svg";
-        icon.alt = "Insert";
-        icon.title = "Insert";
-        icon.style.cursor = "pointer";
-        icon.addEventListener("click", function () {
-            window.alert("Feature not implemented.");
-        });
-        return icon;
-    }
-    function createAddSpan() {
-        const span = document.createElement("span");
-        span.append(createBlankIcon(), createInsertIcon(), "\n");
-        return span;
-    }
-    function createEndSpan(typeName, isObject) {
-        const span = document.createElement("span");
-        span.title = typeName;
-        span.append(createBlankIcon(), (
-            isObject
-            ? "}"
-            : "]"
-        ) + "\n");
-        return span;
+        valueInput.disabled = !type.editable;
+        editingCardBody.append(typeLabel, typeSelect, valueLabel, valueInput);
+        // editing card
+        editingCard.style.left = x + "px";
+        editingCard.style.top = y + "px";
+        body.append(editingCard);
     }
     function resetIndexes(parentNode) {
         let valueSpan = parentNode.previousSibling;
@@ -258,6 +256,192 @@ const editableTree = (function () {
             }
         }
     }
+    function createNewButton(treeNode) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-outline-success";
+        button.style.width = "4rem";
+        button.append("OK");
+        button.addEventListener("click", function () {
+            let newSpan;
+            try {
+                newSpan = from(JSON.parse(valueInput.value));
+            } catch (error) {
+                window.alert(error.message);
+                return;
+            }
+            editingCard.remove();
+            treeNode.replaceChildren(newSpan);
+        });
+        return button;
+    }
+    function createEditButton(span) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-outline-success";
+        button.style.width = "4rem";
+        button.append("OK");
+        button.addEventListener("click", function () {
+            let newSpan;
+            try {
+                newSpan = from(
+                    JSON.parse(valueInput.value),
+                    JSON.parse(nameInput.value),
+                    JSON.parse(span.dataset.level)
+                );
+            } catch (error) {
+                window.alert(error.message);
+                return;
+            }
+            const marginLeft = span.firstChild.style.marginLeft;
+            newSpan.firstChild.style.marginLeft = marginLeft;
+            span.parentNode.replaceChild(newSpan, span);
+            editingCard.remove();
+        });
+        return button;
+    }
+    function createInsertButton(span) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-outline-success";
+        button.style.width = "4rem";
+        button.append("OK");
+        button.addEventListener("click", function () {
+            let newSpan;
+            try {
+                newSpan = from(
+                    JSON.parse(valueInput.value),
+                    JSON.parse(nameInput.value),
+                    JSON.parse(span.dataset.level)
+                );
+            } catch (error) {
+                window.alert(error.message);
+                return;
+            }
+            const marginLeft = span.firstChild.style.marginLeft;
+            newSpan.firstChild.style.marginLeft = marginLeft;
+            span.parentNode.insertBefore(newSpan, span);
+            editingCard.remove();
+            resetIndexes(span.parentNode);
+        });
+        return button;
+    }
+    function newJSON(treeNode, x, y) {
+        editingCardHeader.replaceChildren("New", closeButton);
+        okButton = createNewButton(treeNode);
+        editingCardFooter.replaceChildren(okButton);
+        edit(undefined, 0, undefined, x, y);
+    }
+    function createEditIcon() {
+        const icon = document.createElement("img");
+        icon.src = "images/pencil-square.svg";
+        icon.alt = "Edit";
+        icon.title = "Edit";
+        icon.style.cursor = "pointer";
+        icon.style.marginLeft = ".5em";
+        icon.style.marginRight = ".5em";
+        icon.addEventListener("click", function (event) {
+            const span = icon.parentNode;
+            const nodeList = span.childNodes;
+            let valueSpan;
+            let name;
+            let typeIndex;
+            let value;
+            const node1 = nodeList[1];
+            if (node1.nodeType === 3) {
+                const keyText = node1.nodeValue;
+                name = keyText.substring(0, keyText.length - 2);
+                valueSpan = nodeList[2];
+            } else {
+                valueSpan = node1;
+            }
+            typeIndex = valueSpan.dataset.typeIndex;
+            value = (
+                (typeIndex === "0" || typeIndex === "1")
+                ? elementType[typeIndex].defaultValue
+                : valueSpan.firstChild.nodeValue
+            );
+            editingCardHeader.replaceChildren("Edit", closeButton);
+            okButton = createEditButton(span);
+            editingCardFooter.replaceChildren(okButton);
+            edit(name, typeIndex, value, event.x, event.y);
+            event.stopPropagation();
+        });
+        return icon;
+    }
+    function createInsertIcon() {
+        const icon = document.createElement("img");
+        icon.src = "images/plus-square.svg";
+        icon.alt = "Insert";
+        icon.title = "Insert";
+        icon.style.cursor = "pointer";
+        icon.addEventListener("click", function (event) {
+            const span = icon.parentNode;
+            const nodeList = span.childNodes;
+            let valueSpan;
+            let name;
+            let typeIndex;
+            const node1 = nodeList[1];
+            if (node1.nodeType === 3) {
+                const keyText = node1.nodeValue;
+                name = keyText.substring(0, keyText.length - 2);
+                if (typeof JSON.parse(name) === "string") {
+                    name = elementType[2].defaultValue;
+                }
+                valueSpan = nodeList[2];
+            } else {
+                valueSpan = node1;
+            }
+            typeIndex = valueSpan.dataset.typeIndex;
+            editingCardHeader.replaceChildren("Insert", closeButton);
+            okButton = createInsertButton(span);
+            editingCardFooter.replaceChildren(okButton);
+            edit(name, typeIndex, undefined, event.x, event.y);
+            event.stopPropagation();
+        });
+        return icon;
+    }
+    function createAddIcon() {
+        const icon = document.createElement("img");
+        icon.src = "images/plus-square.svg";
+        icon.alt = "Add";
+        icon.title = "Add";
+        icon.style.cursor = "pointer";
+        icon.addEventListener("click", function (event) {
+            const span = icon.parentNode;
+            let name;
+            let typeIndex;
+            const previousSpan = span.previousSibling;
+            if (previousSpan === null) {
+                const endSpan = span.nextSibling;
+                name = (
+                    endSpan.childNodes[1].nodeValue === "}\n"
+                    ? elementType[2].defaultValue
+                    : elementType[3].defaultValue
+                );
+                typeIndex = "2";
+            } else {
+                const nodeList = previousSpan.childNodes;
+                const keyText = nodeList[1].nodeValue;
+                const key = JSON.parse(
+                    keyText.substring(0, keyText.length - 2)
+                );
+                const previousValueSpan = nodeList[2];
+                name = (
+                    typeof key === "string"
+                    ? elementType[2].defaultValue
+                    : JSON.stringify(key + 1)
+                );
+                typeIndex = previousValueSpan.dataset.typeIndex;
+            }
+            editingCardHeader.replaceChildren("Add", closeButton);
+            okButton = createInsertButton(span);
+            editingCardFooter.replaceChildren(okButton);
+            edit(name, typeIndex, undefined, event.x, event.y);
+            event.stopPropagation();
+        });
+        return icon;
+    }
     function createDeleteIcon() {
         const icon = document.createElement("img");
         icon.src = "images/dash-square.svg";
@@ -266,14 +450,30 @@ const editableTree = (function () {
         icon.style.cursor = "pointer";
         icon.style.marginLeft = ".5em";
         icon.addEventListener("click", function () {
-            const child = icon.parentNode;
-            const parentNode = child.parentNode;
-            parentNode.removeChild(child);
+            const span = icon.parentNode;
+            const parentNode = span.parentNode;
+            parentNode.removeChild(span);
             resetIndexes(parentNode);
         });
         return icon;
     }
-    function from(value, key) {
+    function createAddSpan(level) {
+        const span = document.createElement("span");
+        span.dataset.level = level;
+        span.append(createBlankIcon(level), createAddIcon(), "\n");
+        return span;
+    }
+    function createEndSpan(typeName, isObject, level) {
+        const span = document.createElement("span");
+        span.title = typeName;
+        span.append(createBlankIcon(level), (
+            isObject
+            ? "}"
+            : "]"
+        ) + "\n");
+        return span;
+    }
+    function from(value, key, level) {
         const span = document.createElement("span");
         const valueSpan = document.createElement("span");
         const typeIndex = getTypeIndex(value);
@@ -282,6 +482,10 @@ const editableTree = (function () {
         const isCollection = type.isCollection;
         const isObject = typeIndex === 0;
         let parentNode;
+        if (level === undefined) {
+            level = 0;
+        }
+        span.dataset.level = level;
         valueSpan.title = typeName;
         valueSpan.dataset.typeIndex = typeIndex;
         if (isCollection) {
@@ -291,24 +495,29 @@ const editableTree = (function () {
                 Object.entries(
                     value
                 ).forEach(function ([objectKey, objectValue]) {
-                    parentNode.append(from(objectValue, objectKey));
+                    parentNode.append(from(objectValue, objectKey, level));
                 });
             } else {
                 value.forEach(function (element, index) {
-                    parentNode.append(from(element, index));
+                    parentNode.append(from(element, index, level));
                 });
             }
-            parentNode.append(createAddSpan());
+            parentNode.append(createAddSpan(level));
             level -= 1;
-            parentNode.append(createEndSpan(typeName, isObject));
+            parentNode.append(createEndSpan(typeName, isObject, level));
             // createTreeIcon also set value's text
-            span.append(createTreeIcon(valueSpan, parentNode));
+            span.append(createTreeIcon(valueSpan, parentNode, level));
         } else {
-            span.append(createBlankIcon());
+            span.append(createBlankIcon(level));
             // set value's text
             valueSpan.append(JSON.stringify(value));
         }
-        if (key !== undefined) {
+        if (key === undefined) {
+            span.append(
+                valueSpan,
+                createEditIcon()
+            );
+        } else {
             span.append(
                 // set key's text
                 JSON.stringify(key) + ": ",
@@ -316,11 +525,6 @@ const editableTree = (function () {
                 createEditIcon(),
                 createInsertIcon(),
                 createDeleteIcon()
-            );
-        } else {
-            span.append(
-                valueSpan,
-                createEditIcon()
             );
         }
         span.append("\n");
@@ -369,11 +573,19 @@ const editableTree = (function () {
         }
         return {key, value};
     }
-    window.addEventListener("click", function () {
-        editingDiv.remove();
+    window.addEventListener("click", function (event) {
+        if (event.button === 0) {
+            editingCard.remove();
+        }
+    });
+    body.addEventListener("keypress", function (event) {
+        if (body.contains(editingCard) && event.key === "Enter") {
+            okButton.click();
+        }
     });
     return {
         from,
+        newJSON,
         toValue
     };
 }());
