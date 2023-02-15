@@ -1,6 +1,4 @@
-/*jslint
-    browser
-*/
+/*jslint browser*/
 const editableTable = (function () {
     function e(tagName, attributes) {
         const element = document.createElement(tagName);
@@ -32,7 +30,8 @@ const editableTable = (function () {
     ].join(" ");
     const dropdownMenuClass = [
         "dropdown-menu",
-        "transparent-dropdown-menu"
+        "shadow",
+        "glass-background"
     ].join(" ");
     const dropdownItemClass = "dropdown-item";
     const dropendClass = "dropend";
@@ -287,14 +286,6 @@ const editableTable = (function () {
                 data
             );
             return table;
-        },
-        getCellSize() {
-            let rect;
-            build(0, 0);
-            document.body.appendChild(table);
-            rect = headCell.getBoundingClientRect();
-            document.body.removeChild(table);
-            return {height: rect.height, width: rect.width};
         },
         toData() {
             const rows = body.rows;

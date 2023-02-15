@@ -1,0 +1,6 @@
+button {
+  width: 4rem;
+}
+label[for$="select"] {
+  width: 5.5rem;
+}
