@@ -35,7 +35,7 @@ function getBlob(value) {
 }
 spaceInput.disabled = !spaceCheckbox.checked;
 newButton.addEventListener("click", function (event) {
-    const {left, bottom} = newButton.getBoundingClientRect();
+    const {bottom, left} = newButton.getBoundingClientRect();
     editableTree.newJSON(tree, left, bottom + 1);
     event.stopPropagation();
 });
