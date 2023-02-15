@@ -1,9 +1,5 @@
-/*global
-    fileIO, editableTable
-*/
-/*jslint
-    browser
-*/
+/*global fileIO, editableTable*/
+/*jslint browser*/
 (function () {
     const delimiters = [
         {text: "[,]Comma", value: ","},
@@ -96,10 +92,20 @@
         return field.replaceAll(delimiter, "").replace(/\n/g, "");
     }
     function computeRange() {
-        const rect = div.getBoundingClientRect();
-        const cellSize = editableTable.getCellSize();
-        rowsCountInput.value = Math.trunc(rect.height / cellSize.height) - 2;
-        columnsCountInput.value = Math.trunc(rect.width / cellSize.width) - 2;
+        const {
+            height: divHeight,
+            width: divWidth
+        } = div.getBoundingClientRect();
+        const table = editableTable.create(0, 0);
+        const cell = table.rows[0].cells[0];
+        div.replaceChildren(table);
+        const {
+            height: cellHeight,
+            width: cellWidth
+        } = cell.getBoundingClientRect();
+        table.remove();
+        rowsCountInput.value = Math.trunc(divHeight / cellHeight) - 2;
+        columnsCountInput.value = Math.trunc(divWidth / cellWidth) - 2;
     }
     function createNew() {
         div.replaceChildren(editableTable.create(
