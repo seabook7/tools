@@ -1,6 +1,4 @@
-/*jslint
-    browser
-*/
+/*jslint browser*/
 const editableTable = (function () {
     function e(tagName, attributes) {
         const element = document.createElement(tagName);
