@@ -34,10 +34,13 @@ function getBlob(value) {
     );
 }
 spaceInput.disabled = !spaceCheckbox.checked;
-newButton.addEventListener("click", function (event) {
+newButton.addEventListener("click", async function (event) {
     const {bottom, left} = newButton.getBoundingClientRect();
-    editableTree.newJSON(tree, left, bottom + 1);
     event.stopPropagation();
+    const span = await editableTree.create({x: left, y: bottom + 1});
+    if (span !== undefined) {
+        tree.replaceChildren(span);
+    }
 });
 openButton.addEventListener("click", async function () {
     const file = await fileIO.open("application/json");
