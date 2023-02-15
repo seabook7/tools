@@ -130,12 +130,13 @@ const editableTree = (function () {
         label.append(text);
         return label;
     }
-    function createOKButton() {
+    function createOKButton(clickFunction) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "btn btn-outline-success";
         button.style.width = "4rem";
         button.append("OK");
+        button.addEventListener("click", clickFunction);
         return button;
     }
     const closeButton = (function () {
@@ -217,8 +218,16 @@ const editableTree = (function () {
         return div;
     }());
     const body = document.body;
-    function edit(name, typeIndex, value, x, y) {
+    function showEditingCard(
+        title,
+        {name, typeIndex, value},
+        clickOKFunction,
+        {x, y}
+    ) {
         const type = elementType[typeIndex];
+        // header
+        editingCardHeader.replaceChildren(title, closeButton);
+        // body
         editingCardBody.replaceChildren();
         // name input
         if (name === undefined) {
@@ -238,16 +247,26 @@ const editableTree = (function () {
         typeSelect.selectedIndex = typeIndex;
         // value input
         valueInput.value = (
-            (value === undefined || !type.editable)
+            (value === undefined || type.isCollection)
             ? type.defaultValue
             : value
         );
         valueInput.disabled = !type.editable;
         editingCardBody.append(typeLabel, typeSelect, valueLabel, valueInput);
-        // editing card
+        // footer
+        okButton = createOKButton(clickOKFunction);
+        editingCardFooter.replaceChildren(okButton);
+        // show
         editingCard.style.left = x + "px";
         editingCard.style.top = y + "px";
         body.append(editingCard);
+    }
+    function parseName(json) {
+        const name = JSON.parse(json);
+        if (getTypeIndex(name) !== 2) {
+            throw new TypeError("Name must be a string.");
+        }
+        return name;
     }
     function resetIndexes(parentNode) {
         let valueSpan = parentNode.previousSibling;
@@ -264,79 +283,12 @@ const editableTree = (function () {
             }
         }
     }
-    function getName(json) {
-        const name = JSON.parse(json);
-        if (getTypeIndex(name) !== 2) {
-            throw new TypeError("Name must be a string.");
-        }
-        return name;
-    }
-    function createNewButton(treeNode) {
-        const button = createOKButton();
-        button.addEventListener("click", function () {
-            try {
-                treeNode.replaceChildren(from(JSON.parse(valueInput.value)));
-                editingCard.remove();
-            } catch (error) {
-                window.alert(error.message);
-            }
-        });
-        return button;
-    }
-    function createEditButton(span) {
-        const button = createOKButton();
-        button.addEventListener("click", function () {
-            try {
-                span.parentNode.replaceChild(from(
-                    JSON.parse(valueInput.value),
-                    (
-                        nameInput.disabled
-                        ? JSON.parse(nameInput.value)
-                        : getName(nameInput.value)
-                    ),
-                    JSON.parse(span.dataset.level)
-                ), span);
-                editingCard.remove();
-            } catch (error) {
-                window.alert(error.message);
-            }
-        });
-        return button;
-    }
-    function createInsertButton(span, needResetIndexes) {
-        const button = createOKButton();
-        button.addEventListener("click", function () {
-            try {
-                span.parentNode.insertBefore(from(
-                    JSON.parse(valueInput.value),
-                    (
-                        nameInput.disabled
-                        ? JSON.parse(nameInput.value)
-                        : getName(nameInput.value)
-                    ),
-                    JSON.parse(span.dataset.level)
-                ), span);
-                editingCard.remove();
-                if (needResetIndexes) {
-                    resetIndexes(span.parentNode);
-                }
-            } catch (error) {
-                window.alert(error.message);
-            }
-        });
-        return button;
-    }
-    function newJSON(treeNode, x, y) {
-        editingCardHeader.replaceChildren("New", closeButton);
-        okButton = createNewButton(treeNode);
-        editingCardFooter.replaceChildren(okButton);
-        edit(undefined, 0, undefined, x, y);
-    }
     function createEditIcon() {
+        const title = "Edit";
         const icon = document.createElement("img");
         icon.src = "images/pencil-square.svg";
-        icon.alt = "Edit";
-        icon.title = "Edit";
+        icon.alt = title;
+        icon.title = title;
         icon.style.cursor = "pointer";
         icon.style.marginLeft = ".5em";
         icon.style.marginRight = ".5em";
@@ -356,24 +308,38 @@ const editableTree = (function () {
                 valueSpan = node1;
             }
             typeIndex = valueSpan.dataset.typeIndex;
-            value = (
-                (typeIndex === "0" || typeIndex === "1")
-                ? elementType[typeIndex].defaultValue
-                : valueSpan.firstChild.nodeValue
+            value = valueSpan.firstChild.nodeValue;
+            showEditingCard(
+                title,
+                {name, typeIndex, value},
+                function () {
+                    try {
+                        span.parentNode.replaceChild(from(
+                            JSON.parse(valueInput.value),
+                            (
+                                nameInput.disabled
+                                ? JSON.parse(nameInput.value)
+                                : parseName(nameInput.value)
+                            ),
+                            JSON.parse(span.dataset.level)
+                        ), span);
+                        editingCard.remove();
+                    } catch (error) {
+                        window.alert(error.message);
+                    }
+                },
+                event
             );
-            editingCardHeader.replaceChildren("Edit", closeButton);
-            okButton = createEditButton(span);
-            editingCardFooter.replaceChildren(okButton);
-            edit(name, typeIndex, value, event.x, event.y);
             event.stopPropagation();
         });
         return icon;
     }
     function createInsertIcon() {
+        const title = "Insert";
         const icon = document.createElement("img");
         icon.src = "images/plus-square.svg";
-        icon.alt = "Insert";
-        icon.title = "Insert";
+        icon.alt = title;
+        icon.title = title;
         icon.style.cursor = "pointer";
         icon.addEventListener("click", function (event) {
             const span = icon.parentNode;
@@ -393,19 +359,38 @@ const editableTree = (function () {
                 valueSpan = node1;
             }
             typeIndex = valueSpan.dataset.typeIndex;
-            editingCardHeader.replaceChildren("Insert", closeButton);
-            okButton = createInsertButton(span, true);
-            editingCardFooter.replaceChildren(okButton);
-            edit(name, typeIndex, undefined, event.x, event.y);
+            showEditingCard(
+                title,
+                {name, typeIndex},
+                function () {
+                    try {
+                        span.parentNode.insertBefore(from(
+                            JSON.parse(valueInput.value),
+                            (
+                                nameInput.disabled
+                                ? JSON.parse(nameInput.value)
+                                : parseName(nameInput.value)
+                            ),
+                            JSON.parse(span.dataset.level)
+                        ), span);
+                        editingCard.remove();
+                        resetIndexes(span.parentNode);
+                    } catch (error) {
+                        window.alert(error.message);
+                    }
+                },
+                event
+            );
             event.stopPropagation();
         });
         return icon;
     }
     function createAddIcon() {
+        const title = "Add";
         const icon = document.createElement("img");
         icon.src = "images/plus-square.svg";
-        icon.alt = "Add";
-        icon.title = "Add";
+        icon.alt = title;
+        icon.title = title;
         icon.style.cursor = "pointer";
         icon.addEventListener("click", function (event) {
             const span = icon.parentNode;
@@ -434,10 +419,27 @@ const editableTree = (function () {
                 );
                 typeIndex = previousValueSpan.dataset.typeIndex;
             }
-            editingCardHeader.replaceChildren("Add", closeButton);
-            okButton = createInsertButton(span);
-            editingCardFooter.replaceChildren(okButton);
-            edit(name, typeIndex, undefined, event.x, event.y);
+            showEditingCard(
+                title,
+                {name, typeIndex},
+                function () {
+                    try {
+                        span.parentNode.insertBefore(from(
+                            JSON.parse(valueInput.value),
+                            (
+                                nameInput.disabled
+                                ? JSON.parse(nameInput.value)
+                                : parseName(nameInput.value)
+                            ),
+                            JSON.parse(span.dataset.level)
+                        ), span);
+                        editingCard.remove();
+                    } catch (error) {
+                        window.alert(error.message);
+                    }
+                },
+                event
+            );
             event.stopPropagation();
         });
         return icon;
@@ -573,10 +575,8 @@ const editableTree = (function () {
         }
         return {key, value};
     }
-    window.addEventListener("click", function (event) {
-        if (event.button === 0) {
-            editingCard.remove();
-        }
+    window.addEventListener("click", function () {
+        editingCard.remove();
     });
     body.addEventListener("keypress", function (event) {
         if (body.contains(editingCard) && event.key === "Enter") {
@@ -584,8 +584,26 @@ const editableTree = (function () {
         }
     });
     return {
+        create({x, y}) {
+            return new Promise(function (resolve) {
+                function cancel() {
+                    closeButton.removeEventListener("click", cancel);
+                    window.removeEventListener("click", cancel);
+                    resolve();
+                }
+                closeButton.addEventListener("click", cancel);
+                window.addEventListener("click", cancel);
+                showEditingCard("New", {typeIndex: "0"}, function () {
+                    try {
+                        resolve(from(JSON.parse(valueInput.value)));
+                        editingCard.remove();
+                    } catch (error) {
+                        window.alert(error.message);
+                    }
+                }, {x, y});
+            });
+        },
         from,
-        newJSON,
         toValue
     };
 }());
