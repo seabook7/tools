@@ -314,15 +314,22 @@ const editableTree = (function () {
                 {name, typeIndex, value},
                 function () {
                     try {
-                        span.parentNode.replaceChild(from(
-                            JSON.parse(valueInput.value),
-                            (
-                                nameInput.disabled
-                                ? JSON.parse(nameInput.value)
-                                : parseName(nameInput.value)
-                            ),
-                            JSON.parse(span.dataset.level)
-                        ), span);
+                        const level = span.dataset.level;
+                        if (level === "0") {
+                            span.parentNode.replaceChild(from(
+                                JSON.parse(valueInput.value)
+                            ), span);
+                        } else {
+                            span.parentNode.replaceChild(from(
+                                JSON.parse(valueInput.value),
+                                (
+                                    nameInput.disabled
+                                    ? JSON.parse(nameInput.value)
+                                    : parseName(nameInput.value)
+                                ),
+                                JSON.parse(level)
+                            ), span);
+                        }
                         editingCard.remove();
                     } catch (error) {
                         window.alert(error.message);
@@ -475,7 +482,7 @@ const editableTree = (function () {
         ) + "\n");
         return span;
     }
-    function from(value, key, level) {
+    function from(value, key, level = 0) {
         const span = document.createElement("span");
         const valueSpan = document.createElement("span");
         const typeIndex = getTypeIndex(value);
@@ -484,9 +491,6 @@ const editableTree = (function () {
         const isCollection = type.isCollection;
         const isObject = typeIndex === 0;
         let parentNode;
-        if (level === undefined) {
-            level = 0;
-        }
         span.dataset.level = level;
         valueSpan.title = typeName;
         valueSpan.dataset.typeIndex = typeIndex;
