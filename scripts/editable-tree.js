@@ -246,11 +246,7 @@ const editableTree = (function () {
         // type select
         typeSelect.selectedIndex = typeIndex;
         // value input
-        valueInput.value = (
-            (value === undefined || type.isCollection)
-            ? type.defaultValue
-            : value
-        );
+        valueInput.value = value ?? type.defaultValue;
         valueInput.disabled = !type.editable;
         editingCardBody.append(typeLabel, typeSelect, valueLabel, valueInput);
         // footer
@@ -295,20 +291,21 @@ const editableTree = (function () {
         icon.addEventListener("click", function (event) {
             const span = icon.parentNode;
             const nodeList = span.childNodes;
-            let valueSpan;
-            let name;
-            let typeIndex;
+            const {name, valueSpan} = (function (node) {
+                if (node.nodeType === 3) {
+                    const keyText = node.nodeValue;
+                    return {
+                        name: keyText.substring(0, keyText.length - 2),
+                        valueSpan: nodeList[2]
+                    };
+                }
+                return {valueSpan: node};
+            }(nodeList[1]));
+            const typeIndex = valueSpan.dataset.typeIndex;
             let value;
-            const node1 = nodeList[1];
-            if (node1.nodeType === 3) {
-                const keyText = node1.nodeValue;
-                name = keyText.substring(0, keyText.length - 2);
-                valueSpan = nodeList[2];
-            } else {
-                valueSpan = node1;
+            if (!elementType[typeIndex].isCollection) {
+                value = valueSpan.firstChild.nodeValue;
             }
-            typeIndex = valueSpan.dataset.typeIndex;
-            value = valueSpan.firstChild.nodeValue;
             showEditingCard(
                 title,
                 {name, typeIndex, value},
@@ -351,21 +348,12 @@ const editableTree = (function () {
         icon.addEventListener("click", function (event) {
             const span = icon.parentNode;
             const nodeList = span.childNodes;
-            let valueSpan;
-            let name;
-            let typeIndex;
-            const node1 = nodeList[1];
-            if (node1.nodeType === 3) {
-                const keyText = node1.nodeValue;
-                name = keyText.substring(0, keyText.length - 2);
-                if (typeof JSON.parse(name) === "string") {
-                    name = elementType[2].defaultValue;
-                }
-                valueSpan = nodeList[2];
-            } else {
-                valueSpan = node1;
+            const keyText = nodeList[1].nodeValue;
+            let name = keyText.substring(0, keyText.length - 2);
+            const typeIndex = nodeList[2].dataset.typeIndex;
+            if (typeof JSON.parse(name) === "string") {
+                name = elementType[2].defaultValue;
             }
-            typeIndex = valueSpan.dataset.typeIndex;
             showEditingCard(
                 title,
                 {name, typeIndex},
@@ -418,13 +406,12 @@ const editableTree = (function () {
                 const key = JSON.parse(
                     keyText.substring(0, keyText.length - 2)
                 );
-                const previousValueSpan = nodeList[2];
                 name = (
                     typeof key === "string"
                     ? elementType[2].defaultValue
                     : JSON.stringify(key + 1)
                 );
-                typeIndex = previousValueSpan.dataset.typeIndex;
+                typeIndex = nodeList[2].dataset.typeIndex;
             }
             showEditingCard(
                 title,
@@ -460,9 +447,8 @@ const editableTree = (function () {
         icon.style.marginLeft = ".5em";
         icon.addEventListener("click", function () {
             const span = icon.parentNode;
-            const parentNode = span.parentNode;
-            parentNode.removeChild(span);
-            resetIndexes(parentNode);
+            span.remove();
+            resetIndexes(span.parentNode);
         });
         return icon;
     }
@@ -541,28 +527,23 @@ const editableTree = (function () {
     }
     function toValue(span) {
         const nodeList = span.childNodes;
-        let valueSpan;
-        let children;
-        let key;
+        const {key, valueSpan} = (function (node) {
+            if (node.nodeType === 3) {
+                const keyText = node.nodeValue;
+                return {
+                    key: JSON.parse(keyText.substring(0, keyText.length - 2)),
+                    valueSpan: nodeList[2]
+                };
+            }
+            return {valueSpan: node};
+        }(nodeList[1]));
+        const typeIndex = valueSpan.dataset.typeIndex;
         let value;
-        const node1 = nodeList[1];
-        const lastNode = nodeList[nodeList.length - 1];
-        if (node1.nodeType === 3) {
-            const keyText = node1.nodeValue;
-            key = JSON.parse(keyText.substring(0, keyText.length - 2));
-            valueSpan = nodeList[2];
-        } else {
-            valueSpan = node1;
-        }
-        if (lastNode.nodeType === 1) {
-            children = lastNode.childNodes;
-        }
-        if (children === undefined) {
-            value = JSON.parse(valueSpan.firstChild.nodeValue);
-        } else {
+        if (elementType[typeIndex].isCollection) {
+            const children = nodeList[nodeList.length - 1].childNodes;
             let index = 0;
             const length = children.length - 2;
-            if (valueSpan.dataset.typeIndex === "0") {
+            if (typeIndex === "0") {
                 value = {};
                 while (index < length) {
                     const result = toValue(children[index]);
@@ -576,6 +557,8 @@ const editableTree = (function () {
                     index += 1;
                 }
             }
+        } else {
+            value = JSON.parse(valueSpan.firstChild.nodeValue);
         }
         return {key, value};
     }
