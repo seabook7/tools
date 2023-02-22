@@ -159,8 +159,8 @@ const editableTree = (function () {
         input.type = "text";
         input.id = "value-input";
         input.className = "form-control";
-        input.addEventListener("input", function () {
-            input.dataset.modified = "";
+        input.addEventListener("change", function () {
+            input.dataset.changed = "";
         });
         return input;
     }());
@@ -178,7 +178,7 @@ const editableTree = (function () {
             const type = elementType[select.selectedIndex];
             valueInput.value = type.defaultValue;
             valueInput.disabled = !type.editable;
-            valueInput.dataset.modified = "";
+            valueInput.dataset.changed = "";
         });
         return select;
     }());
@@ -248,7 +248,7 @@ const editableTree = (function () {
         // value input
         valueInput.value = value ?? type.defaultValue;
         valueInput.disabled = !type.editable;
-        delete valueInput.dataset.modified;
+        delete valueInput.dataset.changed;
         editingCardBody.append(typeLabel, typeSelect, valueLabel, valueInput);
         // footer
         okButton = createOKButton(clickOKFunction);
@@ -321,7 +321,7 @@ const editableTree = (function () {
                 function () {
                     try {
                         const level = JSON.parse(span.dataset.level);
-                        if (valueInput.dataset.modified === "") {
+                        if (valueInput.dataset.changed === "") {
                             if (level === 0) {
                                 span.parentNode.replaceChild(from(
                                     JSON.parse(valueInput.value)
