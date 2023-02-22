@@ -1,6 +1,4 @@
-.editable-table {
-  width: unset;
-}
+.editable-table { width: unset; }
 .head-cell {
   min-width: 3rem;
   padding: 0 !important;
