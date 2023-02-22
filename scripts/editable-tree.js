@@ -5,8 +5,8 @@ const editableTree = (function () {
             return {defaultValue, editable, isCollection, name};
         }
         return [
-            create("object", "{}", true, true),
-            create("array", "[]", true, true),
+            create("object", "{}", true, false),
+            create("array", "[]", true, false),
             create("string", "\"\"", false, true),
             create("number", "0", false, true),
             create("\"true\"", "true", false, false),
@@ -37,28 +37,24 @@ const editableTree = (function () {
             }
         }
     }
-    function setObjectText(valueSpan, length) {
+    function getObjectText(length) {
         switch (length) {
         case 0:
-            valueSpan.replaceChildren("{}");
-            break;
+            return "{}";
         case 1:
-            valueSpan.replaceChildren("{1 member}");
-            break;
+            return "{1 member}";
         default:
-            valueSpan.replaceChildren("{" + length + " members}");
+            return "{" + length + " members}";
         }
     }
-    function setArrayText(valueSpan, length) {
+    function getArrayText(length) {
         switch (length) {
         case 0:
-            valueSpan.replaceChildren("[]");
-            break;
+            return "[]";
         case 1:
-            valueSpan.replaceChildren("[1 element]");
-            break;
+            return "[1 element]";
         default:
-            valueSpan.replaceChildren("[" + length + " elements]");
+            return "[" + length + " elements]";
         }
     }
     function createTreeIcon(valueSpan, parentNode, level) {
@@ -68,11 +64,11 @@ const editableTree = (function () {
             const length = parentNode.childNodes.length - 2;
             icon.src = "images/caret-right.svg";
             icon.alt = "+";
-            if (isObject) {
-                setObjectText(valueSpan, length);
-            } else {
-                setArrayText(valueSpan, length);
-            }
+            valueSpan.append(
+                isObject
+                ? getObjectText(length)
+                : getArrayText(length)
+            );
             parentNode.hidden = true;
         } else {
             icon.src = "images/caret-down.svg";
@@ -93,11 +89,11 @@ const editableTree = (function () {
                 const newLength = parentNode.childNodes.length - 2;
                 icon.src = "images/caret-right.svg";
                 icon.alt = "+";
-                if (isObject) {
-                    setObjectText(valueSpan, newLength);
-                } else {
-                    setArrayText(valueSpan, newLength);
-                }
+                valueSpan.firstChild.nodeValue = (
+                    isObject
+                    ? getObjectText(newLength)
+                    : getArrayText(newLength)
+                );
             } else {
                 icon.src = "images/caret-down.svg";
                 icon.alt = "-";
@@ -163,6 +159,9 @@ const editableTree = (function () {
         input.type = "text";
         input.id = "value-input";
         input.className = "form-control";
+        input.addEventListener("input", function () {
+            input.dataset.modified = "";
+        });
         return input;
     }());
     const valueLabel = createLabel(valueInput.id, "Value:");
@@ -179,6 +178,7 @@ const editableTree = (function () {
             const type = elementType[select.selectedIndex];
             valueInput.value = type.defaultValue;
             valueInput.disabled = !type.editable;
+            valueInput.dataset.modified = "";
         });
         return select;
     }());
@@ -248,6 +248,7 @@ const editableTree = (function () {
         // value input
         valueInput.value = value ?? type.defaultValue;
         valueInput.disabled = !type.editable;
+        delete valueInput.dataset.modified;
         editingCardBody.append(typeLabel, typeSelect, valueLabel, valueInput);
         // footer
         okButton = createOKButton(clickOKFunction);
@@ -303,7 +304,15 @@ const editableTree = (function () {
             }(nodeList[1]));
             const typeIndex = valueSpan.dataset.typeIndex;
             let value;
-            if (!elementType[typeIndex].isCollection) {
+            if (elementType[typeIndex].isCollection) {
+                const length
+                = nodeList[nodeList.length - 1].childNodes.length - 2;
+                value = (
+                    typeIndex === "0"
+                    ? getObjectText(length)
+                    : getArrayText(length)
+                );
+            } else {
                 value = valueSpan.firstChild.nodeValue;
             }
             showEditingCard(
@@ -311,21 +320,28 @@ const editableTree = (function () {
                 {name, typeIndex, value},
                 function () {
                     try {
-                        const level = span.dataset.level;
-                        if (level === "0") {
-                            span.parentNode.replaceChild(from(
-                                JSON.parse(valueInput.value)
-                            ), span);
+                        const level = JSON.parse(span.dataset.level);
+                        if (valueInput.dataset.modified === "") {
+                            if (level === 0) {
+                                span.parentNode.replaceChild(from(
+                                    JSON.parse(valueInput.value)
+                                ), span);
+                            } else {
+                                span.parentNode.replaceChild(from(
+                                    JSON.parse(valueInput.value),
+                                    (
+                                        nameInput.disabled
+                                        ? JSON.parse(nameInput.value)
+                                        : parseName(nameInput.value)
+                                    ),
+                                    level
+                                ), span);
+                            }
                         } else {
-                            span.parentNode.replaceChild(from(
-                                JSON.parse(valueInput.value),
-                                (
-                                    nameInput.disabled
-                                    ? JSON.parse(nameInput.value)
-                                    : parseName(nameInput.value)
-                                ),
-                                JSON.parse(level)
-                            ), span);
+                            if (level > 0 && !nameInput.disabled) {
+                                nodeList[1].nodeValue
+                                = parseName(nameInput.value) + ": ";
+                            }
                         }
                         editingCard.remove();
                     } catch (error) {
