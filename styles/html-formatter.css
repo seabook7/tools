@@ -1,0 +1,4 @@
+#open-button,
+#save-button { width: 4rem; }
+#html-textarea { resize: none; }
+div.alert>div { white-space: pre; }
