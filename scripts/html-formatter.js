@@ -7,7 +7,9 @@
     const openButton = document.getElementById("open-button");
     const formatButton = document.getElementById("format-button");
     const saveButton = document.getElementById("save-button");
-    const lineNumbersTextarea = document.getElementById("line-numbers-textarea");
+    const lineNumbersTextarea = (
+        document.getElementById("line-numbers-textarea")
+    );
     const htmlTextarea = document.getElementById("html-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
     const doctype = "<!doctype html>\n";
@@ -219,13 +221,21 @@
                 level += 1;
                 while (index < length) {
                     const node = nodeList[index];
-                    if (node.nodeType === 3) {
-                        const text = node.nodeValue;
-                        if (!whitespace.test(text)) {
-                            htmlText += text;
-                        }
-                    } else {
+                    const nodeValue = node.nodeValue;
+                    switch (node.nodeType) {
+                    case 1:
                         htmlText += toHTML(node, level);
+                        break;
+                    case 3:
+                        if (!whitespace.test(nodeValue)) {
+                            htmlText += nodeValue;
+                        }
+                        break;
+                    case 8:
+                        htmlText += (
+                            indent.repeat(level) + "<!--" + nodeValue + "-->\n"
+                        );
+                        break;
                     }
                     index += 1;
                 }
