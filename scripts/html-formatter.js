@@ -7,7 +7,7 @@
     const openButton = document.getElementById("open-button");
     const formatButton = document.getElementById("format-button");
     const saveButton = document.getElementById("save-button");
-    const lineNumberTextarea = document.getElementById("line-number-textarea");
+    const lineNumbersTextarea = document.getElementById("line-numbers-textarea");
     const htmlTextarea = document.getElementById("html-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
     const doctype = "<!doctype html>\n";
@@ -251,22 +251,22 @@
         }
         return htmlText;
     }
-    function showLineNumber() {
+    function showLineNumbers() {
         const count = htmlTextarea.value.split("\n").length;
         let number = 0;
-        let lineNumber = "";
+        let lineNumbers = "";
         while (number < count) {
             number += 1;
-            lineNumber += number + "\n";
+            lineNumbers += number + "\n";
         }
-        lineNumberTextarea.value = lineNumber;
+        lineNumbersTextarea.value = lineNumbers;
     }
     openButton.addEventListener("click", async function () {
         const file = await fileIO.open("text/html");
         fileNameInput.value = file.name;
         alertPlaceholder.replaceChildren();
         htmlTextarea.value = await file.text();
-        showLineNumber();
+        showLineNumbers();
     });
     formatButton.addEventListener("click", function () {
         alertPlaceholder.replaceChildren();
@@ -282,7 +282,7 @@
             setCharacterEncoding(metaArray, head);
             removeTypeAttribute(documentElement);
             htmlTextarea.value = doctype + toHTML(documentElement);
-            showLineNumber();
+            showLineNumbers();
         } catch (error) {
             alert(error.message, "danger");
         }
@@ -291,11 +291,11 @@
         const blob = new Blob([htmlTextarea.value], {endings: "native"});
         fileIO.download(blob, fileNameInput.value);
     });
-    htmlTextarea.addEventListener("input", showLineNumber);
+    htmlTextarea.addEventListener("input", showLineNumbers);
     htmlTextarea.addEventListener("scroll", function () {
-        lineNumberTextarea.scrollTop = htmlTextarea.scrollTop;
+        lineNumbersTextarea.scrollTop = htmlTextarea.scrollTop;
     });
-    showLineNumber();
+    showLineNumbers();
 }());
 document.body.style.height = window.innerHeight + "px";
 window.addEventListener("resize", function () {
