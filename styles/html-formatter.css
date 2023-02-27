@@ -1,4 +1,17 @@
 #open-button,
+#format-button,
 #save-button { width: 4rem; }
-#html-textarea { resize: none; }
+#line-number-textarea {
+    white-space: pre;
+    width: 4rem;
+    resize: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+#html-textarea {
+    white-space: pre;
+    resize: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
 div.alert>div { white-space: pre; }
