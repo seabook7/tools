@@ -8,18 +8,20 @@
     <link href="styles/html-formatter.css" rel="stylesheet">
   </head>
   <body>
-    <div class="container d-flex flex-column py-3 h-100">
+    <div class="container d-flex h-100 flex-column py-3">
       <div class="row">
         <div class="col-12 col-md-6 col-xl-3 mb-3">
           <div class="input-group">
             <input class="form-control" id="file-name-input" placeholder="File name">
             <button class="btn btn-outline-primary" id="open-button" type="button">Open</button>
+            <button class="btn btn-outline-primary px-0" id="format-button" type="button">Format</button>
             <button class="btn btn-outline-primary" id="save-button" type="button">Save</button>
           </div>
         </div>
       </div>
-      <div class="position-relative flex-fill">
-        <textarea class="form-control h-100" id="html-textarea" spellcheck="false"></textarea>
+      <div class="flex-fill position-relative d-flex">
+        <textarea class="form-control overflow-hidden border-end-0 h-100 text-end text-secondary" id="line-number-textarea" disabled></textarea>
+        <textarea class="form-control border-start-0 h-100" id="html-textarea" spellcheck="false"></textarea>
         <div class="position-absolute bottom-0 end-0" id="live-alert-placeholder"></div>
       </div>
     </div>
