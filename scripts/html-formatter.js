@@ -5,7 +5,9 @@
 (function () {
     const fileNameInput = document.getElementById("file-name-input");
     const openButton = document.getElementById("open-button");
+    const formatButton = document.getElementById("format-button");
     const saveButton = document.getElementById("save-button");
+    const lineNumberTextarea = document.getElementById("line-number-textarea");
     const htmlTextarea = document.getElementById("html-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
     const doctype = "<!doctype html>\n";
@@ -24,6 +26,8 @@
     function setLanguageAttribute(documentElement) {
         if (!documentElement.hasAttribute("lang")) {
             documentElement.setAttribute("lang", "");
+            alert("Please set language attribute of html element.", "warning");
+        } else if (documentElement.getAttribute("lang") === "") {
             alert("Please set language attribute of html element.", "warning");
         }
     }
@@ -241,29 +245,57 @@
                 message += elementsOfChanged.join("\n");
                 alert(message, "info");
             }
+            if (!alertPlaceholder.hasChildNodes()) {
+                alert("Formatting completed.", "success");
+            }
         }
         return htmlText;
+    }
+    function showLineNumber() {
+        const count = htmlTextarea.value.split("\n").length;
+        let number = 0;
+        let lineNumber = "";
+        while (number < count) {
+            number += 1;
+            lineNumber += number + "\n";
+        }
+        lineNumberTextarea.value = lineNumber;
     }
     openButton.addEventListener("click", async function () {
         const file = await fileIO.open("text/html");
         fileNameInput.value = file.name;
         alertPlaceholder.replaceChildren();
-        const parser = new DOMParser();
-        const {documentElement, head} = parser.parseFromString(
-            await file.text(),
-            "text/html"
-        );
-        const metaArray = Array.from(head.getElementsByTagName("meta"));
-        setLanguageAttribute(documentElement);
-        removeIECompatibilityMode(metaArray);
-        setCharacterEncoding(metaArray, head);
-        removeTypeAttribute(documentElement);
-        htmlTextarea.value = doctype + toHTML(documentElement);
+        htmlTextarea.value = await file.text();
+        showLineNumber();
+    });
+    formatButton.addEventListener("click", function () {
+        alertPlaceholder.replaceChildren();
+        try {
+            const parser = new DOMParser();
+            const {documentElement, head} = parser.parseFromString(
+                htmlTextarea.value,
+                "text/html"
+            );
+            const metaArray = Array.from(head.getElementsByTagName("meta"));
+            setLanguageAttribute(documentElement);
+            removeIECompatibilityMode(metaArray);
+            setCharacterEncoding(metaArray, head);
+            removeTypeAttribute(documentElement);
+            htmlTextarea.value = doctype + toHTML(documentElement);
+            showLineNumber();
+        } catch (error) {
+            alert(error.message, "danger");
+        }
     });
     saveButton.addEventListener("click", function () {
         const blob = new Blob([htmlTextarea.value], {endings: "native"});
         fileIO.download(blob, fileNameInput.value);
     });
+    htmlTextarea.addEventListener("input", showLineNumber);
+    htmlTextarea.addEventListener("scroll", function () {
+        lineNumberTextarea.scrollTop = htmlTextarea.scrollTop;
+    });
+    showLineNumber();
 }());
 document.body.style.height = window.innerHeight + "px";
 window.addEventListener("resize", function () {
