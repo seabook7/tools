@@ -105,7 +105,7 @@
         "tabindex",
         "style"
     ];
-    const lastIndex = attributeOrderList.length;
+    const lastOrder = attributeOrderList.length;
     const attributeStartsWithList = ["data-", "aria-"];
     function findAttributeOrder(attributeName) {
         const name = attributeStartsWithList.find(
@@ -113,9 +113,9 @@
         ) ?? attributeName;
         const index = attributeOrderList.indexOf(name);
         return (
-            index === -1
-            ? lastIndex
-            : index
+            index >= 0
+            ? index
+            : lastOrder
         );
     }
     // reference:
@@ -185,7 +185,8 @@
     const whitespace = /^[\t\n\f\r ]*$/;
     function toHTML(element, level = 0) {
         const name = element.tagName.toLowerCase();
-        let htmlText = indent.repeat(level);
+        const elementIndent = indent.repeat(level);
+        let htmlText = elementIndent;
         const attributeOrder = {hasChanged: false};
         if (level === 0) {
             indexOfChanged = 0;
@@ -224,6 +225,7 @@
                 let index = 0;
                 htmlText += "\n";
                 level += 1;
+                const commentIndent = indent.repeat(level);
                 while (index < length) {
                     const node = nodeList[index];
                     const nodeValue = node.nodeValue;
@@ -238,14 +240,14 @@
                         break;
                     case 8:
                         htmlText += (
-                            indent.repeat(level) + "<!--" + nodeValue + "-->\n"
+                            commentIndent + "<!--" + nodeValue + "-->\n"
                         );
                         break;
                     }
                     index += 1;
                 }
                 level -= 1;
-                htmlText += indent.repeat(level) + "</" + name + ">\n";
+                htmlText += elementIndent + "</" + name + ">\n";
             }
         }
         if (level === 0) {
