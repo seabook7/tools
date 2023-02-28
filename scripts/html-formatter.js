@@ -211,10 +211,15 @@
         } else {
             const nodeList = element.childNodes;
             const length = nodeList.length;
+            const node0 = nodeList[0];
             if (length === 0) {
                 htmlText += "</" + name + ">\n";
-            } else if (length === 1 && nodeList[0].nodeType === 3) {
-                htmlText += nodeList[0].nodeValue + "</" + name + ">\n";
+            } else if (length === 1 && node0.nodeType === 3) {
+                const node0Value = node0.nodeValue;
+                if (!whitespace.test(node0Value)) {
+                    htmlText += node0Value;
+                }
+                htmlText += "</" + name + ">\n";
             } else {
                 let index = 0;
                 htmlText += "\n";
