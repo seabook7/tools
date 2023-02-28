@@ -12,6 +12,27 @@
     );
     const htmlTextarea = document.getElementById("html-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
+    function resizeBodyHeight() {
+        document.body.style.height = window.innerHeight + "px";
+    }
+    window.addEventListener("resize", resizeBodyHeight);
+    function showLineNumbers() {
+        const count = htmlTextarea.value.split("\n").length;
+        let number = 0;
+        let lineNumbers = "";
+        while (number < count) {
+            number += 1;
+            lineNumbers += number + "\n";
+        }
+        lineNumbersTextarea.value = lineNumbers;
+    }
+    openButton.addEventListener("click", async function () {
+        const file = await fileIO.open("text/html");
+        fileNameInput.value = file.name;
+        alertPlaceholder.replaceChildren();
+        htmlTextarea.value = await file.text();
+        showLineNumbers();
+    });
     const doctype = "<!doctype html>\n";
     function alert(message, type) {
         const wrapper = document.createElement("div");
@@ -19,8 +40,8 @@
         const closeButton = document.createElement("button");
         messageDiv.append(message);
         closeButton.className = "btn-close";
-        closeButton.type = "button";
         closeButton.dataset.bsDismiss = "alert";
+        closeButton.type = "button";
         wrapper.className = "alert alert-" + type + " alert-dismissible me-4";
         wrapper.append(messageDiv, closeButton);
         alertPlaceholder.append(wrapper);
@@ -37,7 +58,10 @@
         metaArray.forEach(function (meta) {
             if (meta.getAttribute("http-equiv") === "X-UA-Compatible") {
                 meta.remove();
-                alert("IE compatibility mode has been removed.", "info");
+                alert(
+                    "Meta element of IE compatibility mode has been removed.",
+                    "info"
+                );
             }
         });
     }
@@ -57,36 +81,40 @@
             const meta = document.createElement("meta");
             meta.setAttribute("charset", "utf-8");
             head.insertBefore(meta, head.firstChild);
-            alert("Added \"utf-8\" character encoding to head.", "info");
+            alert("Character encoding has been set to \"utf-8\".", "info");
         }
     }
     const typeAttributeElements = ["link", "style", "script"];
+    function getAlertMessage(number, name, element) {
+        let message = number + ": " + name;
+        if (element.hasAttribute("id")) {
+            const id = element.getAttribute("id");
+            if (id !== "") {
+                return message + "#" + id;
+            }
+        }
+        return message;
+    }
     function removeTypeAttribute(documentElement) {
         const elementsOfRemoved = [];
-        let index = 0;
+        let number = 0;
         typeAttributeElements.forEach(function (name) {
-            const array = Array.from(
+            Array.from(
                 documentElement.getElementsByTagName(name)
-            );
-            array.forEach(function (element) {
+            ).forEach(function (element) {
                 if (element.hasAttribute("type")) {
                     element.removeAttribute("type");
-                    index += 1;
-                    let elementOfRemoved = index + ": " + name;
-                    if (element.hasAttribute("id")) {
-                        const id = element.getAttribute("id");
-                        if (id !== "") {
-                            elementOfRemoved += "#" + id;
-                        }
-                    }
-                    elementsOfRemoved.push(elementOfRemoved);
+                    number += 1;
+                    elementsOfRemoved.push(
+                        getAlertMessage(number, name, element)
+                    );
                 }
             });
         });
-        const length = elementsOfRemoved.length;
-        if (length > 0) {
-            let message = "Type attribute of " + length + " element";
-            if (length > 1) {
+        const count = elementsOfRemoved.length;
+        if (count > 0) {
+            let message = "Type attribute of " + count + " element";
+            if (count > 1) {
                 message += "s";
             }
             message += " has been removed.\n";
@@ -128,9 +156,12 @@
         "nomodule", "novalidate", "open", "playsinline",
         "readonly", "required", "reversed", "selected"
     ];
-    const specialCharacters = /[<>"&]/g;
-    function escapeAttributeValue(attributeValue) {
-        return attributeValue.replace(specialCharacters, function (match) {
+    const specialCharacters = /[<>"'&]/g;
+    function escape(string, unescapeCharacters = "") {
+        return string.replace(specialCharacters, function (match) {
+            if (unescapeCharacters.includes(match)) {
+                return match;
+            }
             switch (match) {
             case "<":
                 return "&lt;";
@@ -138,6 +169,8 @@
                 return "&gt;";
             case "\"":
                 return "&quot;";
+            case "'":
+                return "&apos;";
             case "&":
                 return "&amp;";
             }
@@ -148,84 +181,88 @@
         const length = attributes.length;
         const object = {};
         while (index < length) {
-            const attribute = attributes[index];
-            object[attribute.name] = attribute.value;
+            const {name, value} = attributes[index];
+            object[name] = value;
             index += 1;
         }
-        const names = Object.keys(object);
-        names.sort(function (a, b) {
+        return Object.entries(object).sort(function ([a], [b]) {
             const result = findAttributeOrder(a) - findAttributeOrder(b);
             if (result > 0) {
                 attributeOrder.hasChanged = true;
             }
             return result;
-        });
-        return names.reduce(function (text, name) {
-            const value = object[name];
+        }).reduce(function (text, [name, value]) {
             text += " " + name;
             if (
-                !(name.startsWith("data-") && (value === ""))
+                !(name.startsWith("data-") && value === "")
                 && !booleanAttributes.includes(name)
             ) {
-                text += "=\"" + escapeAttributeValue(value) + "\"";
+                text += "=\"" + escape(value, "'") + "\"";
             }
             return text;
         }, "");
     }
-    let indexOfChanged;
+    let numberOfChanged;
     let elementsOfChanged;
     // reference:
-    // https://html.spec.whatwg.org/multipage/syntax.html#void-elements
+    // https://html.spec.whatwg.org/multipage/syntax.html#elements-2
     const voidElements = [
         "area", "base", "br", "col", "embed", "hr", "img", "input",
         "link", "meta", "source", "track", "wbr"
     ];
+    const rawTextElements = ["script", "style"];
+    const escapableRawTextElements = ["textarea", "title"];
     // reference:
     // https://infra.spec.whatwg.org/#ascii-whitespace
-    const whitespace = /^[\t\n\f\r ]*$/;
+    const allWhitespace = /^[\t\n\f\r ]*$/;
+    const startAndEndWhitespace = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
     function toHTML(element, level = 0) {
-        const name = element.tagName.toLowerCase();
-        const elementIndent = indent.repeat(level);
-        let htmlText = elementIndent;
-        const attributeOrder = {hasChanged: false};
         if (level === 0) {
-            indexOfChanged = 0;
+            numberOfChanged = 0;
             elementsOfChanged = [];
         }
-        htmlText += "<" + name + getAttributesText(
+        const name = element.tagName.toLowerCase();
+        const elementIndent = indent.repeat(level);
+        const attributeOrder = {hasChanged: false};
+        let htmlText = elementIndent + "<" + name + getAttributesText(
             element.attributes,
             attributeOrder
         ) + ">";
         if (attributeOrder.hasChanged) {
-            indexOfChanged += 1;
-            let elementOfChanged = indexOfChanged + ": " + name;
-            if (element.hasAttribute("id")) {
-                const id = element.getAttribute("id");
-                if (id !== "") {
-                    elementOfChanged += "#" + id;
-                }
-            }
-            elementsOfChanged.push(elementOfChanged);
+            numberOfChanged += 1;
+            elementsOfChanged.push(
+                getAlertMessage(numberOfChanged, name, element)
+            );
         }
         if (voidElements.includes(name)) {
             htmlText += "\n";
+        } else if (rawTextElements.includes(name)) {
+            if (element.hasChildNodes()) {
+                htmlText += element.firstChild.nodeValue;
+            }
+            htmlText += "</" + name + ">\n";
+        } else if (escapableRawTextElements.includes(name)) {
+            if (element.hasChildNodes()) {
+                htmlText += escape(element.firstChild.nodeValue);
+            }
+            htmlText += "</" + name + ">\n";
         } else {
             const nodeList = element.childNodes;
             const length = nodeList.length;
-            const node0 = nodeList[0];
+            const firstChild = element.firstChild;
             if (length === 0) {
                 htmlText += "</" + name + ">\n";
-            } else if (length === 1 && node0.nodeType === 3) {
-                const node0Value = node0.nodeValue;
-                if (!whitespace.test(node0Value)) {
-                    htmlText += node0Value;
-                }
+            } else if (length === 1 && firstChild.nodeType === 3) {
+                htmlText += firstChild.nodeValue.replace(
+                    startAndEndWhitespace,
+                    ""
+                );
                 htmlText += "</" + name + ">\n";
             } else {
-                let index = 0;
                 htmlText += "\n";
+                let index = 0;
                 level += 1;
-                const commentIndent = indent.repeat(level);
+                const childIndent = indent.repeat(level);
                 while (index < length) {
                     const node = nodeList[index];
                     const nodeValue = node.nodeValue;
@@ -234,13 +271,16 @@
                         htmlText += toHTML(node, level);
                         break;
                     case 3:
-                        if (!whitespace.test(nodeValue)) {
-                            htmlText += nodeValue;
+                        if (!allWhitespace.test(nodeValue)) {
+                            htmlText += childIndent + nodeValue.replace(
+                                startAndEndWhitespace,
+                                ""
+                            ) + "\n";
                         }
                         break;
                     case 8:
                         htmlText += (
-                            commentIndent + "<!--" + nodeValue + "-->\n"
+                            childIndent + "<!--" + nodeValue + "-->\n"
                         );
                         break;
                     }
@@ -251,11 +291,10 @@
             }
         }
         if (level === 0) {
-            const lengthOfChanged = elementsOfChanged.length;
-            if (lengthOfChanged > 0) {
-                let message = "Attribute order of " + lengthOfChanged
-                + " element";
-                if (lengthOfChanged > 1) {
+            const count = elementsOfChanged.length;
+            if (count > 0) {
+                let message = "Attribute order of " + count + " element";
+                if (count > 1) {
                     message += "s";
                 }
                 message += " has been changed.\n";
@@ -268,23 +307,6 @@
         }
         return htmlText;
     }
-    function showLineNumbers() {
-        const count = htmlTextarea.value.split("\n").length;
-        let number = 0;
-        let lineNumbers = "";
-        while (number < count) {
-            number += 1;
-            lineNumbers += number + "\n";
-        }
-        lineNumbersTextarea.value = lineNumbers;
-    }
-    openButton.addEventListener("click", async function () {
-        const file = await fileIO.open("text/html");
-        fileNameInput.value = file.name;
-        alertPlaceholder.replaceChildren();
-        htmlTextarea.value = await file.text();
-        showLineNumbers();
-    });
     formatButton.addEventListener("click", function () {
         alertPlaceholder.replaceChildren();
         try {
@@ -312,9 +334,6 @@
     htmlTextarea.addEventListener("scroll", function () {
         lineNumbersTextarea.scrollTop = htmlTextarea.scrollTop;
     });
+    resizeBodyHeight();
     showLineNumbers();
 }());
-document.body.style.height = window.innerHeight + "px";
-window.addEventListener("resize", function () {
-    document.body.style.height = window.innerHeight + "px";
-});

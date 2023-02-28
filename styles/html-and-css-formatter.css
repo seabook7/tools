@@ -1,6 +1,8 @@
+#new-button,
 #open-button,
 #format-button,
-#save-button { width: 4rem; }
+#undo-button,
+#save-button { width: 6rem; }
 #line-numbers-textarea {
   white-space: pre;
   width: 4rem;
