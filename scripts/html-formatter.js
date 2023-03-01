@@ -267,15 +267,11 @@
                 } else if (escapableRawTextElements.includes(name)) {
                     htmlText += escape(element.firstChild.nodeValue);
                 } else {
-                    let index = 0;
-                    const childNodes = element.childNodes;
-                    const length = childNodes.length;
                     const childSpaces = spaces + "  ";
                     if (!checkTextNode(element.firstChild)) {
                         htmlText += "\n";
                     }
-                    while (index < length) {
-                        const node = childNodes[index];
+                    Array.from(element.childNodes).forEach(function (node) {
                         const nodeValue = node.nodeValue;
                         switch (node.nodeType) {
                         case 1:
@@ -288,11 +284,9 @@
                                         name === "body"
                                         && node === element.lastChild
                                     )
-                                    /*
-                                    If the last node of the body is a text
+                                    /*If the last node of the body is a text
                                     node, the browser will add two line breaks
-                                    at the end of the text node.
-                                    */
+                                    at the end of the text node.*/
                                     ? nodeValue.replace(/\n\n$/, "")
                                     : nodeValue
                                 );
@@ -304,8 +298,7 @@
                             );
                             break;
                         }
-                        index += 1;
-                    }
+                    });
                     if (!checkTextNode(element.lastChild)) {
                         htmlText += spaces;
                     }
