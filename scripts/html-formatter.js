@@ -176,21 +176,27 @@
         });
     }
     function createAttributesText(attributes, attributeOrder) {
+        const array = Array.from(attributes);
+        let orderIsWrong = false;
         let index = 0;
-        const length = attributes.length;
-        const object = {};
+        const length = array.length - 1;
         while (index < length) {
-            const {name, value} = attributes[index];
-            object[name] = value;
-            index += 1;
-        }
-        return Object.entries(object).sort(function ([a], [b]) {
-            const result = findAttributeOrder(a) - findAttributeOrder(b);
-            if (result > 0) {
-                attributeOrder.hasChanged = true;
+            const next = index + 1;
+            if (
+                findAttributeOrder(array[index].name)
+                > findAttributeOrder(array[next].name)
+            ) {
+                orderIsWrong = true;
             }
-            return result;
-        }).reduce(function (text, [name, value]) {
+            index = next;
+        }
+        if (orderIsWrong) {
+            array.sort(function ({name: a}, {name: b}) {
+                return findAttributeOrder(a) - findAttributeOrder(b);
+            });
+            attributeOrder.hasChanged = true;
+        }
+        return array.reduce(function (text, {name, value}) {
             text += " " + name;
             if (
                 !(name.startsWith("data-") && value === "")
