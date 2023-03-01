@@ -49,8 +49,8 @@
     function setLanguageAttribute(documentElement) {
         if (!documentElement.hasAttribute("lang")) {
             documentElement.setAttribute("lang", "");
-            alert("Please set language attribute of html element.", "warning");
-        } else if (documentElement.getAttribute("lang") === "") {
+        }
+        if (documentElement.getAttribute("lang") === "") {
             alert("Please set language attribute of html element.", "warning");
         }
     }
@@ -85,7 +85,7 @@
         }
     }
     const typeAttributeElements = ["link", "style", "script"];
-    function getAlertMessage(number, name, element) {
+    function createAlertMessage(number, name, element) {
         let message = number + ": " + name;
         if (element.hasAttribute("id")) {
             const id = element.getAttribute("id");
@@ -106,7 +106,7 @@
                     element.removeAttribute("type");
                     number += 1;
                     elementsOfRemoved.push(
-                        getAlertMessage(number, name, element)
+                        createAlertMessage(number, name, element)
                     );
                 }
             });
@@ -122,7 +122,6 @@
             alert(message, "info");
         }
     }
-    const indent = "  ";
     const attributeOrderList = [
         "class",
         "id", "name",
@@ -176,7 +175,7 @@
             }
         });
     }
-    function getAttributesText(attributes, attributeOrder) {
+    function createAttributesText(attributes, attributeOrder) {
         let index = 0;
         const length = attributes.length;
         const object = {};
@@ -202,8 +201,22 @@
             return text;
         }, "");
     }
-    let numberOfChanged;
-    let elementsOfChanged;
+    let numberOfChanged = 0;
+    let elementsOfChanged = [];
+    function createStartTags(name, element) {
+        const attributeOrder = {hasChanged: false};
+        const startTags = "<" + name + createAttributesText(
+            element.attributes,
+            attributeOrder
+        ) + ">";
+        if (attributeOrder.hasChanged) {
+            numberOfChanged += 1;
+            elementsOfChanged.push(
+                createAlertMessage(numberOfChanged, name, element)
+            );
+        }
+        return startTags;
+    }
     // reference:
     // https://html.spec.whatwg.org/multipage/syntax.html#elements-2
     const voidElements = [
@@ -214,83 +227,90 @@
     const escapableRawTextElements = ["textarea", "title"];
     // reference:
     // https://infra.spec.whatwg.org/#ascii-whitespace
-    const allWhitespace = /^[\t\n\f\r ]*$/;
-    const startAndEndWhitespace = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
-    function toHTML(element, level = 0) {
-        if (level === 0) {
-            numberOfChanged = 0;
-            elementsOfChanged = [];
-        }
+    const whitespace = /^[\t\n\f\r ]*$/;
+    /**
+     * Determines whether the node is a text node and is not whitespace,
+     * returning true or false as appropriate.
+     * @param {Node?} node The node to determines.
+     */
+    function checkTextNode(node) {
+        return (
+            node?.nodeType === 3
+            ? !whitespace.test(node.nodeValue)
+            : false
+        );
+    }
+    function createCommentTags(comment) {
+        return "<!--" + comment + "-->";
+    }
+    function createEndTags(name) {
+        return "</" + name + ">";
+    }
+    function toHTML(element, spaces = "") {
         const name = element.tagName.toLowerCase();
-        const elementIndent = indent.repeat(level);
-        const attributeOrder = {hasChanged: false};
-        let htmlText = elementIndent + "<" + name + getAttributesText(
-            element.attributes,
-            attributeOrder
-        ) + ">";
-        if (attributeOrder.hasChanged) {
-            numberOfChanged += 1;
-            elementsOfChanged.push(
-                getAlertMessage(numberOfChanged, name, element)
-            );
-        }
-        if (voidElements.includes(name)) {
-            htmlText += "\n";
-        } else if (rawTextElements.includes(name)) {
+        let htmlText = (
+            checkTextNode(element.previousSibling)
+            ? ""
+            : spaces
+        );
+        htmlText += createStartTags(name, element);
+        if (!voidElements.includes(name)) {
             if (element.hasChildNodes()) {
-                htmlText += element.firstChild.nodeValue;
-            }
-            htmlText += "</" + name + ">\n";
-        } else if (escapableRawTextElements.includes(name)) {
-            if (element.hasChildNodes()) {
-                htmlText += escape(element.firstChild.nodeValue);
-            }
-            htmlText += "</" + name + ">\n";
-        } else {
-            const nodeList = element.childNodes;
-            const length = nodeList.length;
-            const firstChild = element.firstChild;
-            if (length === 0) {
-                htmlText += "</" + name + ">\n";
-            } else if (length === 1 && firstChild.nodeType === 3) {
-                htmlText += firstChild.nodeValue.replace(
-                    startAndEndWhitespace,
-                    ""
-                );
-                htmlText += "</" + name + ">\n";
-            } else {
-                htmlText += "\n";
-                let index = 0;
-                level += 1;
-                const childIndent = indent.repeat(level);
-                while (index < length) {
-                    const node = nodeList[index];
-                    const nodeValue = node.nodeValue;
-                    switch (node.nodeType) {
-                    case 1:
-                        htmlText += toHTML(node, level);
-                        break;
-                    case 3:
-                        if (!allWhitespace.test(nodeValue)) {
-                            htmlText += childIndent + nodeValue.replace(
-                                startAndEndWhitespace,
-                                ""
-                            ) + "\n";
-                        }
-                        break;
-                    case 8:
-                        htmlText += (
-                            childIndent + "<!--" + nodeValue + "-->\n"
-                        );
-                        break;
+                if (rawTextElements.includes(name)) {
+                    htmlText += element.firstChild.nodeValue;
+                } else if (escapableRawTextElements.includes(name)) {
+                    htmlText += escape(element.firstChild.nodeValue);
+                } else {
+                    let index = 0;
+                    const childNodes = element.childNodes;
+                    const length = childNodes.length;
+                    const childSpaces = spaces + "  ";
+                    if (!checkTextNode(element.firstChild)) {
+                        htmlText += "\n";
                     }
-                    index += 1;
+                    while (index < length) {
+                        const node = childNodes[index];
+                        const nodeValue = node.nodeValue;
+                        switch (node.nodeType) {
+                        case 1:
+                            htmlText += toHTML(node, childSpaces);
+                            break;
+                        case 3:
+                            if (!whitespace.test(nodeValue)) {
+                                htmlText += (
+                                    (
+                                        name === "body"
+                                        && node === element.lastChild
+                                    )
+                                    /*
+                                    If the last node of the body is a text
+                                    node, the browser will add two line breaks
+                                    at the end of the text node.
+                                    */
+                                    ? nodeValue.replace(/\n\n$/, "")
+                                    : nodeValue
+                                );
+                            }
+                            break;
+                        case 8:
+                            htmlText += childSpaces + createCommentTags(
+                                nodeValue
+                            );
+                            break;
+                        }
+                        index += 1;
+                    }
+                    if (!checkTextNode(element.lastChild)) {
+                        htmlText += spaces;
+                    }
                 }
-                level -= 1;
-                htmlText += elementIndent + "</" + name + ">\n";
             }
+            htmlText += createEndTags(name);
         }
-        if (level === 0) {
+        if (!checkTextNode(element.nextSibling)) {
+            htmlText += "\n";
+        }
+        if (name === "html") {
             const count = elementsOfChanged.length;
             if (count > 0) {
                 let message = "Attribute order of " + count + " element";
@@ -304,6 +324,8 @@
             if (!alertPlaceholder.hasChildNodes()) {
                 alert("Formatting completed.", "success");
             }
+            numberOfChanged = 0;
+            elementsOfChanged = [];
         }
         return htmlText;
     }
