@@ -1,0 +1,20 @@
+#new-button,
+#open-button { width: 4.5rem; }
+#format-button,
+#revert-button,
+#save-button { width: 6rem; }
+#line-numbers-textarea {
+  width: 4rem;
+  white-space: pre;
+  resize: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+#html-textarea,
+#css-textarea {
+  white-space: pre;
+  resize: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+div.alert > div { white-space: pre; }

@@ -1,6 +1,4 @@
-/*jslint
-    browser
-*/
+/*jslint browser*/
 const fileIO = {
     download(blob, name = "") {
         const anchor = document.createElement("a");
@@ -18,11 +16,11 @@ const fileIO = {
         return new Promise(function (resolve) {
             const fileInput = document.createElement("input");
             fileInput.type = "file";
-            if (multiple !== undefined) {
-                fileInput.multiple = multiple;
-            }
             if (accept !== undefined) {
                 fileInput.accept = accept;
+            }
+            if (multiple !== undefined) {
+                fileInput.multiple = multiple;
             }
             fileInput.addEventListener("change", function () {
                 resolve(
@@ -30,6 +28,9 @@ const fileIO = {
                     ? fileInput.files
                     : fileInput.files[0]
                 );
+            });
+            fileInput.addEventListener("cancel", function () {
+                resolve();
             });
             fileInput.click();
         });
