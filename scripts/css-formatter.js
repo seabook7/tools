@@ -4,27 +4,29 @@
 // https://codeguide.co/
 (function () {
     const fileNameInput = document.getElementById("file-name-input");
+    const newButton = document.getElementById("new-button");
     const openButton = document.getElementById("open-button");
     const formatButton = document.getElementById("format-button");
+    const revertButton = document.getElementById("revert-button");
     const saveButton = document.getElementById("save-button");
-    const lineNumbersTextarea = (
-        document.getElementById("line-numbers-textarea")
+    const lineNumbersTextarea = document.getElementById(
+        "line-numbers-textarea"
     );
     const cssTextarea = document.getElementById("css-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
-    function alert(message, type) {
-        const wrapper = document.createElement("div");
-        const messageDiv = document.createElement("div");
-        const closeButton = document.createElement("button");
-        messageDiv.append(message);
-        closeButton.className = "btn-close";
-        closeButton.type = "button";
-        closeButton.dataset.bsDismiss = "alert";
-        wrapper.className = "alert alert-" + type + " alert-dismissible me-4";
-        wrapper.append(messageDiv, closeButton);
-        alertPlaceholder.append(wrapper);
+    function resizeBodyHeight() {
+        document.body.style.height = window.innerHeight + "px";
     }
-    const indent = "  ";
+    function showLineNumbers() {
+        const count = cssTextarea.value.split("\n").length;
+        let number = 0;
+        let lineNumbers = "";
+        while (number < count) {
+            number += 1;
+            lineNumbers += number + "\n";
+        }
+        lineNumbersTextarea.value = lineNumbers;
+    }
     // reference:
     // https://github.com/stormwarning/stylelint-config-recess-order
     const propertyOrderList = [
@@ -387,81 +389,124 @@
         selectors.push(selectorText.substring(start));
         return selectors;
     }
-    function toCSS(cssRuleList, level = 0) {
+    const messageList = {
+        emptyRulesList: [],
+        orderChangedRulesList: []
+    };
+    function createPropertiesText(stylesArray, selectorText, spaces) {
         let index = 0;
-        const length = cssRuleList.length;
-        let cssText = "";
+        const length = stylesArray.length - 1;
+        let orderIsWrong = false;
+        const childSpaces = spaces + "  ";
         while (index < length) {
-            const cssRule = cssRuleList[index];
+            const next = index + 1;
+            if (
+                findPropertyOrder(stylesArray[index].name)
+                > findPropertyOrder(stylesArray[next].name)
+            ) {
+                orderIsWrong = true;
+            }
+            index = next;
+        }
+        if (orderIsWrong) {
+            stylesArray.sort(function ({name: a}, {name: b}) {
+                return findPropertyOrder(a) - findPropertyOrder(b);
+            });
+            messageList.orderChangedRulesList.push(selectorText);
+        }
+        return stylesArray.reduce(function (text, {name, value}) {
+            return text + childSpaces + name + ": " + value + ";\n";
+        }, " {\n") + spaces + "}\n";
+    }
+    function toCSS(cssRuleList, spaces = "") {
+        return Array.from(cssRuleList).reduce(function (cssText, cssRule) {
             const type = cssRule.constructor.name;
             if (type === "CSSStyleRule") {
                 const selectorText = cssRule.selectorText;
                 const selectors = splitSelectorText(selectorText);
                 const style = cssRule.style;
-                const names = Object.values(style);
-                const name0 = names[0];
-                const count = names.length;
-                const selectorIndent = indent.repeat(level);
-                const styleIndent = indent.repeat(level + 1);
-                switch (count) {
-                case 0:
-                    alert(
-                        "Empty rules " + selectorText + " has been removed.",
-                        "info"
-                    );
-                    break;
-                case 1:
+                const styles = Array.from(style).map(
+                    (name) => ({name, value: style[name]})
+                );
+                const length = styles.length;
+                if (length === 0) {
+                    messageList.emptyRulesList.push(selectorText);
+                } else {
                     cssText += selectors.map(
-                        (selector) => selectorIndent + selector
+                        (selector) => spaces + selector
                     ).join(",\n");
-                    cssText += " { " + name0 + ": " + style[name0] + "; }\n";
-                    break;
-                default:
-                    cssText += selectors.map(
-                        (selector) => selectorIndent + selector
-                    ).join(",\n") + " {\n";
-                    names.sort(function (a, b) {
-                        const result
-                        = findPropertyOrder(a)
-                        - findPropertyOrder(b);
-                        if (result > 0) {
-                            // imcomplete
-                        }
-                        return result;
-                    });
-                    cssText += names.reduce(
-                        (text, name) => text
-                        + styleIndent + name + ": " + style[name] + ";\n",
-                        ""
-                    );
-                    cssText += selectorIndent + "}\n";
+                    if (length === 1) {
+                        const {name, value} = styles[0];
+                        cssText += " { " + name + ": " + value + "; }\n";
+                    } else {
+                        cssText += createPropertiesText(
+                            styles,
+                            selectorText,
+                            spaces
+                        );
+                    }
                 }
             }
-            index += 1;
-        }
-        return cssText;
+            return cssText;
+        }, "");
     }
-    function showLineNumbers() {
-        const count = cssTextarea.value.split("\n").length;
-        let number = 0;
-        let lineNumbers = "";
-        while (number < count) {
-            number += 1;
-            lineNumbers += number + "\n";
-        }
-        lineNumbersTextarea.value = lineNumbers;
+    function alert(message, type) {
+        const wrapper = document.createElement("div");
+        const messageDiv = document.createElement("div");
+        const closeButton = document.createElement("button");
+        messageDiv.append(message);
+        closeButton.className = "btn-close";
+        closeButton.type = "button";
+        closeButton.dataset.bsDismiss = "alert";
+        wrapper.className = "alert alert-" + type + " alert-dismissible me-4";
+        wrapper.append(messageDiv, closeButton);
+        alertPlaceholder.append(wrapper);
     }
+    function report() {
+        const emptyRulesList = messageList.emptyRulesList;
+        const orderChangedRulesList = messageList.orderChangedRulesList;
+        let count = emptyRulesList.length;
+        let message;
+        if (count > 0) {
+            message = count + " empyt rules has been removed.\n";
+            message += emptyRulesList.map(
+                (selectorText, index) => index + 1 + ": " + selectorText
+            ).join("\n");
+            alert(message, "info");
+        }
+        messageList.emptyRulesList = [];
+        count = orderChangedRulesList.length;
+        if (count > 0) {
+            message = "Property order of " + count
+            + " rules has been changed.\n";
+            message += orderChangedRulesList.map(
+                (selectorText, index) => index + 1 + ": " + selectorText
+            ).join("\n");
+            alert(message, "info");
+        }
+        messageList.orderChangedRulesList = [];
+    }
+    let originalCSS;
+    window.addEventListener("resize", resizeBodyHeight);
+    newButton.addEventListener("click", function () {
+        alertPlaceholder.replaceChildren();
+        fileNameInput.value = "New.css";
+        cssTextarea.value = "";
+        showLineNumbers();
+    });
     openButton.addEventListener("click", async function () {
         const file = await fileIO.open("text/css");
-        fileNameInput.value = file.name;
-        alertPlaceholder.replaceChildren();
-        cssTextarea.value = await file.text();
-        showLineNumbers();
+        if (file) {
+            alertPlaceholder.replaceChildren();
+            fileNameInput.value = file.name;
+            cssTextarea.value = await file.text();
+            showLineNumbers();
+        }
     });
     formatButton.addEventListener("click", function () {
         const iframe = document.createElement("iframe");
-        iframe.title = "CSS";
         iframe.src = "css.html";
+        iframe.title = "CSS";
         iframe.hidden = true;
         document.body.append(iframe);
         alertPlaceholder.replaceChildren();
@@ -472,11 +517,25 @@
             cssDocument.head.append(style);
             const cssStyleSheet = cssDocument.styleSheets[0];
             console.log(cssStyleSheet);
-            cssTextarea.value = toCSS(cssStyleSheet.cssRules);
+            const css = toCSS(cssStyleSheet.cssRules);
+            report();
+            if (cssTextarea.value !== css) {
+                originalCSS = cssTextarea.value;
+                cssTextarea.value = css;
+                showLineNumbers();
+                revertButton.disabled = false;
+            }
         } catch (error) {
             alert(error.message, "danger");
         }
         iframe.remove();
+    });
+    revertButton.disabled = true;
+    revertButton.addEventListener("click", function () {
+        alertPlaceholder.replaceChildren();
+        cssTextarea.value = originalCSS;
+        showLineNumbers();
+        revertButton.disabled = true;
     });
     saveButton.addEventListener("click", function () {
         const blob = new Blob([cssTextarea.value], {endings: "native"});
@@ -486,10 +545,7 @@
     cssTextarea.addEventListener("scroll", function () {
         lineNumbersTextarea.scrollTop = cssTextarea.scrollTop;
     });
+    resizeBodyHeight();
     showLineNumbers();
-    alert("Imcompleted!", "danger");
+    alert("Incomplete!", "danger");
 }());
-document.body.style.height = window.innerHeight + "px";
-window.addEventListener("resize", function () {
-    document.body.style.height = window.innerHeight + "px";
-});
