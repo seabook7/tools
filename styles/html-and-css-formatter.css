@@ -1,11 +1,11 @@
 #new-button,
-#open-button,
+#open-button { width: 4.5rem; }
 #format-button,
-#undo-button,
+#revert-button,
 #save-button { width: 6rem; }
 #line-numbers-textarea {
-  white-space: pre;
   width: 4rem;
+  white-space: pre;
   resize: none;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
