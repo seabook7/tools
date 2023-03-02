@@ -4,11 +4,13 @@
 // https://codeguide.co/
 (function () {
     const fileNameInput = document.getElementById("file-name-input");
+    const newButton = document.getElementById("new-button");
     const openButton = document.getElementById("open-button");
     const formatButton = document.getElementById("format-button");
+    const revertButton = document.getElementById("revert-button");
     const saveButton = document.getElementById("save-button");
-    const lineNumbersTextarea = (
-        document.getElementById("line-numbers-textarea")
+    const lineNumbersTextarea = document.getElementById(
+        "line-numbers-textarea"
     );
     const htmlTextarea = document.getElementById("html-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
@@ -16,6 +18,17 @@
         document.body.style.height = window.innerHeight + "px";
     }
     window.addEventListener("resize", resizeBodyHeight);
+    const newHTML = `<!doctype html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+  </head>
+  <body>
+  </body>
+</html>
+`;
     function showLineNumbers() {
         const count = htmlTextarea.value.split("\n").length;
         let number = 0;
@@ -26,12 +39,20 @@
         }
         lineNumbersTextarea.value = lineNumbers;
     }
+    newButton.addEventListener("click", function () {
+        alertPlaceholder.replaceChildren();
+        fileNameInput.value = "New.html";
+        htmlTextarea.value = newHTML;
+        showLineNumbers();
+    });
     openButton.addEventListener("click", async function () {
         const file = await fileIO.open("text/html");
-        fileNameInput.value = file.name;
-        alertPlaceholder.replaceChildren();
-        htmlTextarea.value = await file.text();
-        showLineNumbers();
+        if (file) {
+            alertPlaceholder.replaceChildren();
+            fileNameInput.value = file.name;
+            htmlTextarea.value = await file.text();
+            showLineNumbers();
+        }
     });
     const doctype = "<!doctype html>\n";
     function alert(message, type) {
@@ -122,6 +143,7 @@
             alert(message, "info");
         }
     }
+    let originalHTML;
     const attributeOrderList = [
         "class",
         "id", "name",
@@ -246,43 +268,51 @@
             : false
         );
     }
-    function createCommentTags(comment) {
+    function createComment(comment) {
         return "<!--" + comment + "-->";
     }
     function createEndTags(name) {
         return "</" + name + ">";
     }
-    function toHTML(element, spaces = "") {
-        const name = element.tagName.toLowerCase();
-        let htmlText = (
-            checkTextNode(element.previousSibling)
-            ? ""
-            : spaces
+    function toHTML(node, spaces = "") {
+        const isElement = node.nodeType === 1;
+        const name = (
+            isElement
+            ? node.tagName.toLowerCase()
+            : ""
         );
-        htmlText += createStartTags(name, element);
-        if (!voidElements.includes(name)) {
-            if (element.hasChildNodes()) {
+        let htmlText = "";
+        if (!checkTextNode(node.previousSibling)) {
+            htmlText += spaces;
+        }
+        htmlText += (
+            isElement
+            ? createStartTags(name, node)
+            : createComment(node.nodeValue)
+        );
+        if (isElement && !voidElements.includes(name)) {
+            if (node.hasChildNodes()) {
                 if (rawTextElements.includes(name)) {
-                    htmlText += element.firstChild.nodeValue;
+                    htmlText += node.firstChild.nodeValue;
                 } else if (escapableRawTextElements.includes(name)) {
-                    htmlText += escape(element.firstChild.nodeValue);
+                    htmlText += escape(node.firstChild.nodeValue);
                 } else {
-                    const childSpaces = spaces + "  ";
-                    if (!checkTextNode(element.firstChild)) {
+                    if (!checkTextNode(node.firstChild)) {
                         htmlText += "\n";
                     }
-                    Array.from(element.childNodes).forEach(function (node) {
-                        const nodeValue = node.nodeValue;
-                        switch (node.nodeType) {
+                    Array.from(node.childNodes).forEach(function (child) {
+                        const nodeValue = child.nodeValue;
+                        switch (child.nodeType) {
                         case 1:
-                            htmlText += toHTML(node, childSpaces);
+                        case 8:
+                            htmlText += toHTML(child, spaces + "  ");
                             break;
                         case 3:
                             if (!whitespace.test(nodeValue)) {
                                 htmlText += (
                                     (
                                         name === "body"
-                                        && node === element.lastChild
+                                        && child === node.lastChild
                                     )
                                     /*If the last node of the body is a text
                                     node, the browser will add two line breaks
@@ -292,21 +322,16 @@
                                 );
                             }
                             break;
-                        case 8:
-                            htmlText += childSpaces + createCommentTags(
-                                nodeValue
-                            );
-                            break;
                         }
                     });
-                    if (!checkTextNode(element.lastChild)) {
+                    if (!checkTextNode(node.lastChild)) {
                         htmlText += spaces;
                     }
                 }
             }
             htmlText += createEndTags(name);
         }
-        if (!checkTextNode(element.nextSibling)) {
+        if (!checkTextNode(node.nextSibling)) {
             htmlText += "\n";
         }
         if (name === "html") {
@@ -341,11 +366,23 @@
             removeIECompatibilityMode(metaArray);
             setCharacterEncoding(metaArray, head);
             removeTypeAttribute(documentElement);
-            htmlTextarea.value = doctype + toHTML(documentElement);
-            showLineNumbers();
+            const html = doctype + toHTML(documentElement);
+            if (htmlTextarea.value !== html) {
+                originalHTML = htmlTextarea.value;
+                htmlTextarea.value = html;
+                showLineNumbers();
+                revertButton.disabled = false;
+            }
         } catch (error) {
             alert(error.message, "danger");
         }
+    });
+    revertButton.disabled = true;
+    revertButton.addEventListener("click", function () {
+        alertPlaceholder.replaceChildren();
+        htmlTextarea.value = originalHTML;
+        showLineNumbers();
+        revertButton.disabled = true;
     });
     saveButton.addEventListener("click", function () {
         const blob = new Blob([htmlTextarea.value], {endings: "native"});
