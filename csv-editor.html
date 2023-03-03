@@ -5,18 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CSV Editor</title>
     <link href="bootstrap-5.2.3-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bootstrap-icons-1.10.3/bootstrap-icons.css" rel="stylesheet">
     <link href="styles/editable-table.css" rel="stylesheet">
     <link href="styles/csv-editor.css" rel="stylesheet">
   </head>
   <body>
-    <div class="container d-flex flex-column py-3 h-100">
+    <div class="container d-flex h-100 flex-column py-3">
       <div class="row">
         <div class="col-12 col-md-6 col-xl-3 mb-3">
           <div class="input-group">
-            <input class="form-control" placeholder="File name" id="file-name" value="New.csv">
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#new-modal">New</button>
-            <button class="btn btn-outline-primary" id="open-button">Open</button>
-            <button class="btn btn-outline-primary" id="save-button">Save</button>
+            <input class="form-control" id="file-name-input" value="New.csv" placeholder="File name">
+            <button class="btn btn-outline-secondary px-0" data-bs-toggle="modal" data-bs-target="#new-modal" type="button">
+              <i class="bi-file-earmark"></i>
+              New
+            </button>
+            <button class="btn btn-outline-secondary px-0" id="open-button" type="button">
+              <i class="bi-file-earmark-code"></i>
+              Open
+            </button>
           </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3 mb-3">
@@ -32,6 +38,16 @@
             <select class="form-select" id="quote-select">
             </select>
           </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 d-flex justify-content-between mb-3">
+          <button class="btn btn-outline-secondary" id="save-button" type="button">
+            <i class="bi-save"></i>
+            Save
+          </button>
+          <a class="btn btn-outline-secondary" href="index.html" role="button">
+            <i class="bi-x-square"></i>
+            Close
+          </a>
         </div>
       </div>
       <div class="flex-fill">
@@ -54,7 +70,10 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline-success" data-bs-dismiss="modal" id="new-button">OK</button>
+            <button class="btn btn-outline-success" id="new-button" data-bs-dismiss="modal" type="button">
+              <i class="bi-check2"></i>
+              OK
+            </button>
           </div>
         </div>
       </div>
