@@ -1,6 +1,7 @@
-button {
-  width: 4rem;
-}
-label[for$="select"] {
-  width: 5.5rem;
-}
+button[data-bs-target="#new-modal"],
+#open-button,
+#new-button { inline-size: 4.5rem; }
+#save-button,
+a[href="index.html"] { inline-size: 6rem; }
+label[for="delimiter-select"],
+label[for="quote-select"] { inline-size: 5.5rem; }

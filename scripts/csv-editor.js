@@ -15,7 +15,7 @@
     ];
     let delimiter = ",";
     let quote = "\"";
-    const fileNameInput = document.getElementById("file-name");
+    const fileNameInput = document.getElementById("file-name-input");
     const rowsCountInput = document.getElementById("rows-count");
     const columnsCountInput = document.getElementById("columns-count");
     const newButton = document.getElementById("new-button");
@@ -24,6 +24,9 @@
     const delimiterSelect = document.getElementById("delimiter-select");
     const quoteSelect = document.getElementById("quote-select");
     const div = document.querySelector("div.flex-fill");
+    function resizeBodyHeight() {
+        document.body.style.height = window.innerHeight + "px";
+    }
     function split(text, quote, delimiter) {
         if (quote.length === 1 && delimiter.length === 1) {
             const array = [];
@@ -113,25 +116,28 @@
             parseInt(columnsCountInput.value)
         ));
     }
+    window.addEventListener("resize", resizeBodyHeight);
     newButton.addEventListener("click", createNew);
     openButton.addEventListener("click", async function () {
         const file = await fileIO.open("text/csv,text/plain");
-        const text = await file.text();
-        const data = split(
-            text.replace(/\r\n?/g, "\n").replace(/\n$/, ""),
-            quote,
-            "\n"
-        ).map(
-            (record) => split(record, quote, delimiter).map(
-                (field) => decode(field, quote)
-            )
-        );
-        fileNameInput.value = file.name;
-        rowsCountInput.value = data.length;
-        columnsCountInput.value = Math.max(
-            ...data.map((record) => record.length)
-        );
-        div.replaceChildren(editableTable.from(data));
+        if (file) {
+            const text = await file.text();
+            const data = split(
+                text.replace(/\r\n?/g, "\n").replace(/\n$/, ""),
+                quote,
+                "\n"
+            ).map(
+                (record) => split(record, quote, delimiter).map(
+                    (field) => decode(field, quote)
+                )
+            );
+            fileNameInput.value = file.name;
+            rowsCountInput.value = data.length;
+            columnsCountInput.value = Math.max(
+                ...data.map((record) => record.length)
+            );
+            div.replaceChildren(editableTable.from(data));
+        }
     });
     saveButton.addEventListener("click", function () {
         const data = editableTable.toData();
@@ -166,10 +172,7 @@
     quoteSelect.addEventListener("change", function () {
         quote = quoteSelect.value;
     });
-    document.body.style.height = window.innerHeight + "px";
-    window.addEventListener("resize", function () {
-        document.body.style.height = window.innerHeight + "px";
-    });
+    resizeBodyHeight();
     computeRange();
     createNew();
 }());

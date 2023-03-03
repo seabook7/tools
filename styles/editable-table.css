@@ -1,29 +1,6 @@
-.editable-table {
-  width: unset;
-}
-.head-cell {
-  min-width: 3rem;
-  padding: 0 !important;
-  position: unset;
-}
-.insert-cell {
-  text-align: center;
-  cursor: pointer;
-  min-width: 3rem;
-  padding-top: .25rem !important;
-  padding-bottom: .25rem !important;
-}
-.field-cell {
-  min-width: 3rem;
-  padding: .25rem !important;
-  white-space: pre;
-}
-.editable-table-dropdown-button {
-  padding: .25rem;
-  background-color: transparent;
-  border: 0;
-  width: 100%
-}
+.min-inline-size-3rem { min-inline-size: 3rem; }
+.cursor-pointer { cursor: pointer; }
+.white-space-pre { white-space: pre; }
 .glass-background {
   background-color: transparent;
   backdrop-filter: blur(4px);

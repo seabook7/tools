@@ -13,26 +13,19 @@ const editableTable = (function () {
         }
         return element;
     }
-    const tableClass = [
-        "table",
-        "table-bordered",
-        "table-success",
-        "table-striped",
-        "editable-table"
-    ].join(" ");
+    const tableClass = (
+        "table table-success table-striped table-bordered w-auto"
+    );
     const headClass = "table-light";
-    const headCellClass = "head-cell";
-    const insertCellClass = "insert-cell";
-    const fieldCellClass = "field-cell";
-    const dropdownButtonClass = [
-        "dropdown-toggle",
-        "editable-table-dropdown-button"
-    ].join(" ");
-    const dropdownMenuClass = [
-        "dropdown-menu",
-        "shadow",
-        "glass-background"
-    ].join(" ");
+    const headCellClass = "position-static min-inline-size-3rem p-0";
+    const insertCellClass = (
+        "min-inline-size-3rem py-1 text-center cursor-pointer"
+    );
+    const fieldCellClass = "min-inline-size-3rem p-1 white-space-pre";
+    const dropdownButtonClass = (
+        "dropdown-toggle border-0 w-100 p-1 bg-transparent"
+    );
+    const dropdownMenuClass = "dropdown-menu glass-background shadow";
     const dropdownItemClass = "dropdown-item";
     const dropendClass = "dropend";
     const table = e("table", {className: tableClass});
@@ -90,24 +83,20 @@ const editableTable = (function () {
         return cell;
     }
     function createInsertIcon() {
-        return e("img", {
-            alt: "+",
-            height: 16,
-            src: "images/plus-square.svg",
-            width: 16
-        });
+        const i = document.createElement("i");
+        i.className = "bi-plus-square text-primary";
+        return i;
     }
     function createDeleteIcon() {
-        return e("img", {
-            alt: "-",
-            height: 16,
-            src: "images/dash-square.svg",
-            width: 16
-        });
+        const i = document.createElement("i");
+        i.className = "bi-dash-square text-danger";
+        return i;
     }
     function createDropdownButton(text) {
-        const button = e("button", {className: dropdownButtonClass});
+        const button = document.createElement("button");
+        button.className = dropdownButtonClass;
         button.dataset.bsToggle = "dropdown";
+        button.type = "button";
         button.append(text);
         return button;
     }
@@ -118,7 +107,8 @@ const editableTable = (function () {
             className: dropdownItemClass,
             click() {
                 insertColumn(ul.parentElement.cellIndex);
-            }
+            },
+            type: "button"
         });
         button.append(createInsertIcon(), " Insert column");
         li.append(button);
@@ -128,7 +118,8 @@ const editableTable = (function () {
             className: dropdownItemClass,
             click() {
                 deleteColumn(ul.parentElement.cellIndex);
-            }
+            },
+            type: "button"
         });
         button.append(createDeleteIcon(), " Delete column");
         li.append(button);
@@ -142,7 +133,8 @@ const editableTable = (function () {
             className: dropdownItemClass,
             click() {
                 insertRow(ul.parentElement.parentElement.rowIndex);
-            }
+            },
+            type: "button"
         });
         button.append(createInsertIcon(), " Insert row");
         li.append(button);
@@ -152,7 +144,8 @@ const editableTable = (function () {
             className: dropdownItemClass,
             click() {
                 deleteRow(ul.parentElement.parentElement.rowIndex);
-            }
+            },
+            type: "button"
         });
         button.append(createDeleteIcon(), " Delete row");
         li.append(button);
