@@ -129,7 +129,13 @@
             Array.from(
                 documentElement.getElementsByTagName(name)
             ).forEach(function (element) {
-                if (element.hasAttribute("type")) {
+                if (element.hasAttribute("type") && ((
+                    (name === "link" || name === "style") &&
+                    element.type === "text/css"
+                ) || (
+                    name === "script" &&
+                    element.type === "text/javascript"
+                ))) {
                     element.removeAttribute("type");
                     removedList.push(getNameWithId(name, element));
                 }
