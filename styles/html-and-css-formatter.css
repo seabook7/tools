@@ -3,6 +3,9 @@
 #format-button,
 #revert-button,
 #save-button { inline-size: 6rem; }
+a[href="css-formatter.html"],
+a[href="html-formatter.html"] { inline-size: 10.5rem; }
+a[href="index.html"] { inline-size: 6rem; }
 #line-numbers-textarea {
   inline-size: 4rem;
   block-size: 100%;
