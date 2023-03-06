@@ -14,10 +14,6 @@
     );
     const htmlTextarea = document.getElementById("html-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
-    function resizeBodyHeight() {
-        document.body.style.height = window.innerHeight + "px";
-    }
-    window.addEventListener("resize", resizeBodyHeight);
     const newHTML = `<!doctype html>
 <html lang="">
   <head>
@@ -29,121 +25,7 @@
   </body>
 </html>
 `;
-    function showLineNumbers() {
-        const count = htmlTextarea.value.split("\n").length;
-        let number = 0;
-        let lineNumbers = "";
-        while (number < count) {
-            number += 1;
-            lineNumbers += number + "\n";
-        }
-        lineNumbersTextarea.value = lineNumbers;
-    }
-    newButton.addEventListener("click", function () {
-        alertPlaceholder.replaceChildren();
-        fileNameInput.value = "New.html";
-        htmlTextarea.value = newHTML;
-        showLineNumbers();
-    });
-    openButton.addEventListener("click", async function () {
-        const file = await fileIO.open("text/html");
-        if (file) {
-            alertPlaceholder.replaceChildren();
-            fileNameInput.value = file.name;
-            htmlTextarea.value = await file.text();
-            showLineNumbers();
-        }
-    });
-    const doctype = "<!doctype html>\n";
-    function alert(message, type) {
-        const wrapper = document.createElement("div");
-        const messageDiv = document.createElement("div");
-        const closeButton = document.createElement("button");
-        messageDiv.append(message);
-        closeButton.className = "btn-close";
-        closeButton.dataset.bsDismiss = "alert";
-        closeButton.type = "button";
-        wrapper.className = "alert alert-" + type + " alert-dismissible me-4";
-        wrapper.append(messageDiv, closeButton);
-        alertPlaceholder.append(wrapper);
-    }
-    function setLanguageAttribute(documentElement) {
-        if (!documentElement.hasAttribute("lang")) {
-            documentElement.setAttribute("lang", "");
-        }
-        if (documentElement.getAttribute("lang") === "") {
-            alert("Please set language attribute of html element.", "warning");
-        }
-    }
-    function removeIECompatibilityMode(metaArray) {
-        metaArray.forEach(function (meta) {
-            if (meta.getAttribute("http-equiv") === "X-UA-Compatible") {
-                meta.remove();
-                alert(
-                    "Meta element of IE compatibility mode has been removed.",
-                    "info"
-                );
-            }
-        });
-    }
-    function setCharacterEncoding(metaArray, head) {
-        const hasCharset = metaArray.some(function (meta) {
-            const result = meta.hasAttribute("charset");
-            if (result && meta.getAttribute("charset") !== "utf-8") {
-                meta.setAttribute("charset", "utf-8");
-                alert(
-                    "Character encoding has been changed to \"utf-8\".",
-                    "info"
-                );
-            }
-            return result;
-        });
-        if (!hasCharset) {
-            const meta = document.createElement("meta");
-            meta.setAttribute("charset", "utf-8");
-            head.insertBefore(meta, head.firstChild);
-            alert("Character encoding has been set to \"utf-8\".", "info");
-        }
-    }
     const typeAttributeElements = ["link", "style", "script"];
-    function createAlertMessage(number, name, element) {
-        let message = number + ": " + name;
-        if (element.hasAttribute("id")) {
-            const id = element.getAttribute("id");
-            if (id !== "") {
-                return message + "#" + id;
-            }
-        }
-        return message;
-    }
-    function removeTypeAttribute(documentElement) {
-        const elementsOfRemoved = [];
-        let number = 0;
-        typeAttributeElements.forEach(function (name) {
-            Array.from(
-                documentElement.getElementsByTagName(name)
-            ).forEach(function (element) {
-                if (element.hasAttribute("type")) {
-                    element.removeAttribute("type");
-                    number += 1;
-                    elementsOfRemoved.push(
-                        createAlertMessage(number, name, element)
-                    );
-                }
-            });
-        });
-        const count = elementsOfRemoved.length;
-        if (count > 0) {
-            let message = "Type attribute of " + count + " element";
-            if (count > 1) {
-                message += "s";
-            }
-            message += " has been removed.\n";
-            message += elementsOfRemoved.join("\n");
-            alert(message, "info");
-        }
-    }
-    let originalHTML;
     const attributeOrderList = [
         "class",
         "id", "name",
@@ -156,17 +38,6 @@
     ];
     const lastOrder = attributeOrderList.length;
     const attributeStartsWithList = ["data-", "aria-"];
-    function findAttributeOrder(attributeName) {
-        const name = attributeStartsWithList.find(
-            (searchString) => attributeName.startsWith(searchString)
-        ) ?? attributeName;
-        const index = attributeOrderList.indexOf(name);
-        return (
-            index >= 0
-            ? index
-            : lastOrder
-        );
-    }
     // reference:
     // https://html.spec.whatwg.org/multipage/indices.html#attributes-3
     const booleanAttributes = [
@@ -178,6 +49,104 @@
         "readonly", "required", "reversed", "selected"
     ];
     const specialCharacters = /[<>"'&]/g;
+    // reference:
+    // https://html.spec.whatwg.org/multipage/syntax.html#elements-2
+    const voidElements = [
+        "area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "source", "track", "wbr"
+    ];
+    const rawTextElements = ["script", "style"];
+    const escapableRawTextElements = ["textarea", "title"];
+    // reference:
+    // https://infra.spec.whatwg.org/#ascii-whitespace
+    const whitespace = /^[\t\n\f\r ]*$/;
+    const doctype = "<!doctype html>\n";
+    const messageList = {
+        orderChangedElementList: [],
+        removeIECompatibilityModeInfo: false,
+        removedTypeAttributeElementList: [],
+        setCharacterEncodingInfo: "",
+        setLanguageAttributeWarning: false
+    };
+    let originalHTML;
+    function resizeBodyHeight() {
+        document.body.style.height = window.innerHeight + "px";
+    }
+    function showLineNumbers() {
+        const count = htmlTextarea.value.split("\n").length;
+        let number = 0;
+        let lineNumbers = "";
+        while (number < count) {
+            number += 1;
+            lineNumbers += number + "\n";
+        }
+        lineNumbersTextarea.value = lineNumbers;
+    }
+    function setLanguageAttribute(documentElement) {
+        if (!documentElement.hasAttribute("lang")) {
+            documentElement.setAttribute("lang", "");
+        }
+        messageList.setLanguageAttributeWarning = (
+            documentElement.getAttribute("lang") === ""
+        );
+    }
+    function removeIECompatibilityMode(metaArray) {
+        metaArray.forEach(function (meta) {
+            if (meta.getAttribute("http-equiv") === "X-UA-Compatible") {
+                meta.remove();
+                messageList.removeIECompatibilityModeInfo = true;
+            }
+        });
+    }
+    function setCharacterEncoding(metaArray, head) {
+        const hasCharset = metaArray.some(function (meta) {
+            const result = meta.hasAttribute("charset");
+            if (result && meta.getAttribute("charset") !== "utf-8") {
+                meta.setAttribute("charset", "utf-8");
+                messageList.setCharacterEncodingInfo = "change";
+            }
+            return result;
+        });
+        if (!hasCharset) {
+            const meta = document.createElement("meta");
+            meta.setAttribute("charset", "utf-8");
+            head.insertBefore(meta, head.firstChild);
+            messageList.setCharacterEncodingInfo = "set";
+        }
+    }
+    function getNameWithId(name, element) {
+        if (element.hasAttribute("id")) {
+            const id = element.getAttribute("id");
+            if (id !== "") {
+                return name + "#" + id;
+            }
+        }
+        return name;
+    }
+    function removeTypeAttribute(documentElement) {
+        const removedList = messageList.removedTypeAttributeElementList;
+        typeAttributeElements.forEach(function (name) {
+            Array.from(
+                documentElement.getElementsByTagName(name)
+            ).forEach(function (element) {
+                if (element.hasAttribute("type")) {
+                    element.removeAttribute("type");
+                    removedList.push(getNameWithId(name, element));
+                }
+            });
+        });
+    }
+    function findAttributeOrder(attributeName) {
+        const name = attributeStartsWithList.find(
+            (searchString) => attributeName.startsWith(searchString)
+        ) ?? attributeName;
+        const index = attributeOrderList.indexOf(name);
+        return (
+            index >= 0
+            ? index
+            : lastOrder
+        );
+    }
     function escape(string, unescapeCharacters = "") {
         return string.replace(specialCharacters, function (match) {
             if (unescapeCharacters.includes(match)) {
@@ -229,8 +198,6 @@
             return text;
         }, "");
     }
-    let numberOfChanged = 0;
-    let elementsOfChanged = [];
     function createStartTags(name, element) {
         const attributeOrder = {hasChanged: false};
         const startTags = "<" + name + createAttributesText(
@@ -238,24 +205,12 @@
             attributeOrder
         ) + ">";
         if (attributeOrder.hasChanged) {
-            numberOfChanged += 1;
-            elementsOfChanged.push(
-                createAlertMessage(numberOfChanged, name, element)
+            messageList.orderChangedElementList.push(
+                getNameWithId(name, element)
             );
         }
         return startTags;
     }
-    // reference:
-    // https://html.spec.whatwg.org/multipage/syntax.html#elements-2
-    const voidElements = [
-        "area", "base", "br", "col", "embed", "hr", "img", "input",
-        "link", "meta", "source", "track", "wbr"
-    ];
-    const rawTextElements = ["script", "style"];
-    const escapableRawTextElements = ["textarea", "title"];
-    // reference:
-    // https://infra.spec.whatwg.org/#ascii-whitespace
-    const whitespace = /^[\t\n\f\r ]*$/;
     /**
      * Determines whether the node is a text node and is not whitespace,
      * returning true or false as appropriate.
@@ -334,27 +289,95 @@
         if (!checkTextNode(node.nextSibling)) {
             htmlText += "\n";
         }
-        if (name === "html") {
-            const count = elementsOfChanged.length;
-            if (count > 0) {
-                let message = "Attribute order of " + count + " element";
-                if (count > 1) {
-                    message += "s";
-                }
-                message += " has been changed.\n";
-                message += elementsOfChanged.join("\n");
-                alert(message, "info");
-            }
-            if (!alertPlaceholder.hasChildNodes()) {
-                alert("Formatting completed.", "success");
-            }
-            numberOfChanged = 0;
-            elementsOfChanged = [];
-        }
         return htmlText;
     }
-    formatButton.addEventListener("click", function () {
+    function alert(message, type) {
+        const wrapper = document.createElement("div");
+        const messageDiv = document.createElement("div");
+        const closeButton = document.createElement("button");
+        messageDiv.append(message);
+        closeButton.className = "btn-close";
+        closeButton.dataset.bsDismiss = "alert";
+        closeButton.type = "button";
+        wrapper.className = "alert alert-" + type + " alert-dismissible me-4";
+        wrapper.append(messageDiv, closeButton);
+        alertPlaceholder.append(wrapper);
+    }
+    function report() {
+        const removedList = messageList.removedTypeAttributeElementList;
+        const changedList = messageList.orderChangedElementList;
+        let message;
+        let count;
         alertPlaceholder.replaceChildren();
+        if (messageList.setLanguageAttributeWarning) {
+            message = "Please set language attribute of html element.";
+            alert(message, "warning");
+            messageList.setLanguageAttributeWarning = false;
+        }
+        switch (messageList.setCharacterEncodingInfo) {
+        case "change":
+            message = "Character encoding has been changed to \"utf-8\".";
+            alert(message, "info");
+            break;
+        case "set":
+            message = "Character encoding has been set to \"utf-8\".";
+            alert(message, "info");
+            break;
+        }
+        messageList.setCharacterEncodingInfo = "";
+        if (messageList.removeIECompatibilityModeInfo) {
+            message = "Meta element of IE compatibility mode has been removed.";
+            alert(message, "info");
+            messageList.removeIECompatibilityModeInfo = false;
+        }
+        count = removedList.length;
+        if (count > 0) {
+            message = "Type attribute of " + count + " element";
+            if (count > 1) {
+                message += "s";
+            }
+            message += " has been removed.\n";
+            message += removedList.map(
+                (nameWithId, index) => index + 1 + ": " + nameWithId
+            ).join("\n");
+            alert(message, "info");
+            messageList.removedTypeAttributeElementList = [];
+        }
+        count = changedList.length;
+        if (count > 0) {
+            message = "Attribute order of " + count + " element";
+            if (count > 1) {
+                message += "s";
+            }
+            message += " has been changed.\n";
+            message += changedList.map(
+                (nameWithId, index) => index + 1 + ": " + nameWithId
+            ).join("\n");
+            alert(message, "info");
+            messageList.orderChangedElementList = [];
+        }
+        if (!alertPlaceholder.hasChildNodes()) {
+            message = "Formatting completed.";
+            alert(message, "success");
+        }
+    }
+    window.addEventListener("resize", resizeBodyHeight);
+    newButton.addEventListener("click", function () {
+        alertPlaceholder.replaceChildren();
+        fileNameInput.value = "New.html";
+        htmlTextarea.value = newHTML;
+        showLineNumbers();
+    });
+    openButton.addEventListener("click", async function () {
+        const file = await fileIO.open("text/html");
+        if (file) {
+            alertPlaceholder.replaceChildren();
+            fileNameInput.value = file.name;
+            htmlTextarea.value = await file.text();
+            showLineNumbers();
+        }
+    });
+    formatButton.addEventListener("click", function () {
         try {
             const parser = new DOMParser();
             const {documentElement, head} = parser.parseFromString(
@@ -363,10 +386,11 @@
             );
             const metaArray = Array.from(head.getElementsByTagName("meta"));
             setLanguageAttribute(documentElement);
-            removeIECompatibilityMode(metaArray);
             setCharacterEncoding(metaArray, head);
+            removeIECompatibilityMode(metaArray);
             removeTypeAttribute(documentElement);
             const html = doctype + toHTML(documentElement);
+            report();
             if (htmlTextarea.value !== html) {
                 originalHTML = htmlTextarea.value;
                 htmlTextarea.value = html;
