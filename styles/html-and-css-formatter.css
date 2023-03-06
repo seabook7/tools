@@ -1,20 +1,22 @@
 #new-button,
-#open-button { width: 4.5rem; }
+#open-button { inline-size: 4.5rem; }
 #format-button,
 #revert-button,
-#save-button { width: 6rem; }
+#save-button { inline-size: 6rem; }
 #line-numbers-textarea {
-  width: 4rem;
+  inline-size: 4rem;
+  block-size: 100%;
   white-space: pre;
   resize: none;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
 }
 #html-textarea,
 #css-textarea {
+  block-size: 100%;
   white-space: pre;
   resize: none;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
 }
 div.alert > div { white-space: pre; }
