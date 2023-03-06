@@ -14,19 +14,6 @@
     );
     const cssTextarea = document.getElementById("css-textarea");
     const alertPlaceholder = document.getElementById("live-alert-placeholder");
-    function resizeBodyHeight() {
-        document.body.style.height = window.innerHeight + "px";
-    }
-    function showLineNumbers() {
-        const count = cssTextarea.value.split("\n").length;
-        let number = 0;
-        let lineNumbers = "";
-        while (number < count) {
-            number += 1;
-            lineNumbers += number + "\n";
-        }
-        lineNumbersTextarea.value = lineNumbers;
-    }
     // reference:
     // https://github.com/stormwarning/stylelint-config-recess-order
     const propertyOrderList = [
@@ -82,12 +69,12 @@
         "justify-self",
         "order",
         "float",
-        "width",
-        "min-width",
-        "max-width",
-        "height",
-        "min-height",
-        "max-height",
+        "width", "inline-size",         // add logical property
+        "min-width", "min-inline-size", // add logical property
+        "max-width", "max-inline-size", // add logical property
+        "height", "block-size",         // add logical property
+        "min-height", "min-block-size", // add logical property
+        "max-height", "max-block-size", // add logical property
         "aspect-ratio",
         "padding",
         "padding-block",
@@ -112,8 +99,8 @@
         "margin-bottom",
         "margin-left",
         "overflow",
-        "overflow-x",
-        "overflow-y",
+        "overflow-x", "overflow-inline", // add logical property
+        "overflow-y", "overflow-block",  // add logical property
         "-webkit-overflow-scrolling",
         "-ms-overflow-x",
         "-ms-overflow-y",
@@ -350,6 +337,24 @@
         "animation-direction"
     ];
     const lastOrder = propertyOrderList.length;
+    const messageList = {
+        emptyRulesList: [],
+        orderChangedRulesList: []
+    };
+    let originalCSS;
+    function resizeBodyHeight() {
+        document.body.style.height = window.innerHeight + "px";
+    }
+    function showLineNumbers() {
+        const count = cssTextarea.value.split("\n").length;
+        let number = 0;
+        let lineNumbers = "";
+        while (number < count) {
+            number += 1;
+            lineNumbers += number + "\n";
+        }
+        lineNumbersTextarea.value = lineNumbers;
+    }
     function findPropertyOrder(propertyName) {
         const index = propertyOrderList.indexOf(propertyName);
         return (
@@ -389,10 +394,6 @@
         selectors.push(selectorText.substring(start));
         return selectors;
     }
-    const messageList = {
-        emptyRulesList: [],
-        orderChangedRulesList: []
-    };
     function createPropertiesText(stylesArray, selectorText, spaces) {
         let index = 0;
         const length = stylesArray.length - 1;
@@ -486,7 +487,6 @@
         }
         messageList.orderChangedRulesList = [];
     }
-    let originalCSS;
     window.addEventListener("resize", resizeBodyHeight);
     newButton.addEventListener("click", function () {
         alertPlaceholder.replaceChildren();
