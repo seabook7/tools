@@ -58,12 +58,11 @@ const editableTree = (function () {
         }
     }
     function createTreeIcon(valueSpan, parentNode, level) {
-        const icon = document.createElement("img");
+        const icon = document.createElement("i");
         const isObject = valueSpan.dataset.typeIndex === "0";
         if (level > 0) {
             const length = parentNode.childNodes.length - 2;
-            icon.src = "images/caret-right.svg";
-            icon.alt = "+";
+            icon.className = "bi-caret-right";
             valueSpan.append(
                 isObject
                 ? getObjectText(length)
@@ -71,32 +70,29 @@ const editableTree = (function () {
             );
             parentNode.hidden = true;
         } else {
-            icon.src = "images/caret-down.svg";
-            icon.alt = "-";
+            icon.className = "bi-caret-down";
             valueSpan.append(
                 isObject
                 ? "{"
                 : "["
             );
         }
-        icon.style.cursor = "pointer";
+        icon.setAttribute("role", "button");
         if (level > 0) {
-            icon.style.marginLeft = level + "em";
+            icon.style.marginInlineStart = level + "rem";
         }
         icon.addEventListener("click", function () {
             parentNode.hidden = !parentNode.hidden;
             if (parentNode.hidden) {
                 const newLength = parentNode.childNodes.length - 2;
-                icon.src = "images/caret-right.svg";
-                icon.alt = "+";
+                icon.className = "bi-caret-right";
                 valueSpan.firstChild.nodeValue = (
                     isObject
                     ? getObjectText(newLength)
                     : getArrayText(newLength)
                 );
             } else {
-                icon.src = "images/caret-down.svg";
-                icon.alt = "-";
+                icon.className = "bi-caret-down";
                 valueSpan.firstChild.nodeValue = (
                     isObject
                     ? "{"
@@ -107,11 +103,10 @@ const editableTree = (function () {
         return icon;
     }
     function createBlankIcon(level) {
-        const icon = document.createElement("img");
-        icon.src = "images/blank.svg";
-        icon.alt = " ";
+        const icon = document.createElement("i");
+        icon.className = "blank-icon";
         if (level > 0) {
-            icon.style.marginLeft = level + "em";
+            icon.style.marginInlineStart = level + "rem";
         }
         return icon;
     }
@@ -128,10 +123,11 @@ const editableTree = (function () {
     }
     function createOKButton(clickFunction) {
         const button = document.createElement("button");
+        const icon = document.createElement("i");
+        button.className = "btn btn-outline-success px-0";
         button.type = "button";
-        button.className = "btn btn-outline-success";
-        button.style.width = "4rem";
-        button.append("OK");
+        icon.className = "bi-check2-square";
+        button.append(icon, " OK");
         button.addEventListener("click", clickFunction);
         return button;
     }
@@ -282,13 +278,11 @@ const editableTree = (function () {
     }
     function createEditIcon() {
         const title = "Edit";
-        const icon = document.createElement("img");
-        icon.src = "images/pencil-square.svg";
-        icon.alt = title;
+        const icon = document.createElement("i");
+        icon.className = "bi-pencil-square text-success";
         icon.title = title;
-        icon.style.cursor = "pointer";
-        icon.style.marginLeft = ".5em";
-        icon.style.marginRight = ".5em";
+        icon.setAttribute("role", "button");
+        icon.style.marginInline = ".5rem";
         icon.addEventListener("click", function (event) {
             const span = icon.parentNode;
             const nodeList = span.childNodes;
@@ -340,7 +334,8 @@ const editableTree = (function () {
                         } else {
                             if (level > 0 && !nameInput.disabled) {
                                 nodeList[1].nodeValue
-                                = parseName(nameInput.value) + ": ";
+                                = JSON.stringify(parseName(nameInput.value))
+                                + ": ";
                             }
                         }
                         editingCard.remove();
@@ -356,11 +351,10 @@ const editableTree = (function () {
     }
     function createInsertIcon() {
         const title = "Insert";
-        const icon = document.createElement("img");
-        icon.src = "images/plus-square.svg";
-        icon.alt = title;
+        const icon = document.createElement("i");
+        icon.className = "bi-plus-square text-primary";
         icon.title = title;
-        icon.style.cursor = "pointer";
+        icon.setAttribute("role", "button");
         icon.addEventListener("click", function (event) {
             const span = icon.parentNode;
             const nodeList = span.childNodes;
@@ -398,11 +392,10 @@ const editableTree = (function () {
     }
     function createAddIcon() {
         const title = "Add";
-        const icon = document.createElement("img");
-        icon.src = "images/plus-square.svg";
-        icon.alt = title;
+        const icon = document.createElement("i");
+        icon.className = "bi-plus-square text-primary";
         icon.title = title;
-        icon.style.cursor = "pointer";
+        icon.setAttribute("role", "button");
         icon.addEventListener("click", function (event) {
             const span = icon.parentNode;
             let name;
@@ -455,12 +448,11 @@ const editableTree = (function () {
         return icon;
     }
     function createDeleteIcon() {
-        const icon = document.createElement("img");
-        icon.src = "images/dash-square.svg";
-        icon.alt = "Delete";
+        const icon = document.createElement("i");
+        icon.className = "bi-dash-square text-danger";
         icon.title = "Delete";
-        icon.style.cursor = "pointer";
-        icon.style.marginLeft = ".5em";
+        icon.setAttribute("role", "button");
+        icon.style.marginInlineStart = ".5rem";
         icon.addEventListener("click", function () {
             const span = icon.parentNode;
             span.remove();
