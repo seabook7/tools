@@ -492,15 +492,15 @@ const editableTree = (function () {
             parentNode = document.createElement("span");
             level += 1;
             if (isObject) {
-                Object.entries(
+                parentNode.append(...Object.entries(
                     value
-                ).forEach(function ([objectKey, objectValue]) {
-                    parentNode.append(from(objectValue, objectKey, level));
-                });
+                ).map(function ([objectKey, objectValue]) {
+                    return from(objectValue, objectKey, level);
+                }));
             } else {
-                value.forEach(function (element, index) {
-                    parentNode.append(from(element, index, level));
-                });
+                parentNode.append(...value.map(
+                    (element, index) => from(element, index, level)
+                ));
             }
             parentNode.append(createAddSpan(level));
             level -= 1;
