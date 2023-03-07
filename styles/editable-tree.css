@@ -1,4 +1,10 @@
+.blank-icon {
+  display: inline-block;
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+div[class^="card-footer"] > button { inline-size: 4.5rem; }
 .glass-background {
-    background-color: transparent;
-    backdrop-filter: blur(4px);
+  background-color: transparent;
+  backdrop-filter: blur(4px);
 }
