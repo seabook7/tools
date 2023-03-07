@@ -1,6 +1,6 @@
 .blank-icon {
   display: inline-block;
-  inline-size: 1rem;
+  inline-size: .875rem;
   block-size: 1rem;
 }
 div[class^="card-footer"] > button { inline-size: 4.5rem; }
