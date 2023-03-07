@@ -38,21 +38,23 @@ newButton.addEventListener("click", async function (event) {
     const {bottom, left} = newButton.getBoundingClientRect();
     event.stopPropagation();
     const span = await editableTree.create({x: left, y: bottom + 1});
-    if (span !== undefined) {
+    if (span) {
         tree.replaceChildren(span);
     }
 });
 openButton.addEventListener("click", async function () {
     const file = await fileIO.open("application/json");
-    fileName.value = file.name;
-    tree.replaceChildren();
-    tree.parentNode.append(spinner);
-    try {
-        const value = JSON.parse(await file.text());
-        spinner.remove();
-        tree.replaceChildren(editableTree.from(value));
-    } catch (error) {
-        window.alert(error.message);
+    if (file) {
+        fileName.value = file.name;
+        tree.replaceChildren();
+        tree.parentNode.append(spinner);
+        try {
+            const value = JSON.parse(await file.text());
+            spinner.remove();
+            tree.replaceChildren(editableTree.from(value));
+        } catch (error) {
+            window.alert(error.message);
+        }
     }
 });
 saveButton.addEventListener("click", function () {
