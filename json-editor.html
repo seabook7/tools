@@ -11,7 +11,7 @@
     <link href="styles/json-editor.css" rel="stylesheet">
   </head>
   <body>
-    <div class="container py-3">
+    <div class="container d-flex h-100 flex-column py-3">
       <div class="row">
         <div class="col-12 col-md-6 col-xl-3 mb-3">
           <div class="input-group">
@@ -29,10 +29,10 @@
         <div class="col-12 col-md-6 col-xl-3 mb-3">
           <div class="input-group">
             <div class="input-group-text">
-              <input class="form-check-input" id="space-checkbox" type="checkbox" checked>
+              <input class="form-check-input" id="spaces-checkbox" type="checkbox" checked>
             </div>
-            <label class="input-group-text" for="space-checkbox">Spaces for save:</label>
-            <input class="form-control" id="space-input" placeholder="4">
+            <label class="input-group-text" for="spaces-checkbox">Spaces for save:</label>
+            <input class="form-control" id="spaces-input" placeholder="4">
           </div>
         </div>
         <div class="col-12 col-xl-6 d-flex justify-content-between mb-3">
@@ -46,9 +46,7 @@
           </a>
         </div>
       </div>
-      <div>
-        <pre id="tree"></pre>
-      </div>
+      <div class="flex-fill"></div>
     </div>
     <script src="bootstrap-5.2.3-dist/js/bootstrap.bundle.min.js"></script>
     <script src="scripts/file-io.js"></script>

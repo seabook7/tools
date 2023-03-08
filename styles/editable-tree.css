@@ -1,7 +1,13 @@
-.blank-icon {
+.i-blank {
   display: inline-block;
-  inline-size: .875rem;
-  block-size: 1rem;
+  inline-size: 1em;
+  block-size: 1em;
+}
+span.editable-tree ul { margin-block: 0; }
+span.editable-tree ul,
+span.editable-tree ol {
+  padding-inline-start: 1em;
+  list-style-type: none;
 }
 div[class^="card-footer"] > button { inline-size: 4.5rem; }
 .glass-background {
