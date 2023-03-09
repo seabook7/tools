@@ -82,6 +82,32 @@ const editableTree = (function () {
             }
         });
     }
+    function createEditIcon(keys, value, hasNextValue) {
+        const title = "Edit";
+        const icon = createIcon("bi-pencil-square text-success ps-2");
+        let key = keys.pop();
+        icon.title = title;
+        icon.setAttribute("role", "button");
+        icon.addEventListener("click", async function (event) {
+            event.stopPropagation();
+            const result = await editingCard.show(title, {key, value}, event);
+            if (result !== undefined) {
+                const span = icon.parentNode;
+                key = result.key;
+                if (key !== undefined) {
+                    keys.push(key);
+                }
+                if (result.value !== undefined) {
+                    value = result.value;
+                }
+                span.parentNode.replaceChild(
+                    from(value, keys, hasNextValue),
+                    span
+                );
+            }
+        });
+        return icon;
+    }
     function from(value, keys = [], hasNextValue = false) {
         const typeIndex = getTypeIndex(value);
         const isObject = typeIndex === 0;
@@ -95,6 +121,8 @@ const editableTree = (function () {
         );
         const countSpan = createUserSelectNoneSpan();
         const endIcon = createIcon("i-blank");
+        const insertIcon = createIcon("bi-plus-square text-primary ps-2");
+        const deleteIcon = createIcon("bi-dash-square text-danger ps-2");
         let startText = "";
         let endText;
         span.append(startIcon);
@@ -178,6 +206,10 @@ const editableTree = (function () {
         }
         span.title = elementType[typeIndex].name;
         span.append(endText);
+        span.append(createEditIcon(keys, value, hasNextValue));
+        if (level > 0) {
+            span.append(insertIcon, deleteIcon);
+        }
         return span;
     }
     /**
@@ -283,7 +315,7 @@ const editableTree = (function () {
         return select;
     }
     const editingCard = (function () {
-        const div = createDiv("card position-fixed shadow glass-background");
+        const card = createDiv("card position-fixed shadow glass-background");
         const cardHeader = createDiv("card-header user-select-none");
         const cardBody = createDiv("card-body");
         const cardFooter = createDiv("card-footer text-end");
@@ -298,18 +330,20 @@ const editableTree = (function () {
             {className: "mb-3", disabled: true}
         );
         const indexLabel = createLabel("form-label", indexInput.id, "Index:");
-        const selectRadio = createRadio(
+        const selectRadioDiv = createRadio(
             "select-radio",
             "value-radio",
             "Select",
             {className: "form-check-inline"}
         );
-        const inputRadio = createRadio(
+        const selectRadio = selectRadioDiv.firstChild;
+        const inputRadioDiv = createRadio(
             "input-radio",
             "value-radio",
             "Input",
             {className: "form-check-inline"}
         );
+        const inputRadio = inputRadioDiv.firstChild;
         const valueSelect = createSelect("value-select", ...elementType.filter(
             (type) => !type.editable
         ).map(
@@ -330,7 +364,7 @@ const editableTree = (function () {
         let offsetY;
         let isMousedown;
         let valueIsChanged = false;
-        div.addEventListener("click", function (event) {
+        card.addEventListener("click", function (event) {
             event.stopPropagation();
         });
         cardHeader.addEventListener("mousedown", function (event) {
@@ -342,8 +376,8 @@ const editableTree = (function () {
         });
         cardHeader.addEventListener("mousemove", function (event) {
             if (isMousedown) {
-                div.style.left = event.x - offsetX + "px";
-                div.style.top = event.y - offsetY + "px";
+                card.style.left = event.x - offsetX + "px";
+                card.style.top = event.y - offsetY + "px";
             }
         });
         cardHeader.addEventListener("mouseup", function () {
@@ -355,13 +389,15 @@ const editableTree = (function () {
         closeButton.addEventListener("mousedown", function (event) {
             event.stopPropagation();
         });
-        selectRadio.firstChild.addEventListener("change", function () {
+        selectRadio.addEventListener("change", function () {
             cardBody.replaceChild(valueSelectLabel, valueInputLabel);
             cardBody.replaceChild(valueSelect, valueInput);
+            valueIsChanged = true;
         });
-        inputRadio.firstChild.addEventListener("change", function () {
+        inputRadio.addEventListener("change", function () {
             cardBody.replaceChild(valueInputLabel, valueSelectLabel);
             cardBody.replaceChild(valueInput, valueSelect);
+            valueIsChanged = true;
         });
         valueSelect.addEventListener("change", function () {
             valueIsChanged = true;
@@ -369,7 +405,7 @@ const editableTree = (function () {
         valueInput.addEventListener("change", function () {
             valueIsChanged = true;
         });
-        div.append(cardHeader, cardBody, cardFooter);
+        card.append(cardHeader, cardBody, cardFooter);
         return {
             show(title, {key, value}, {x, y}) {
                 const body = document.body;
@@ -380,7 +416,9 @@ const editableTree = (function () {
                     " OK"
                 );
                 const type = elementType[getTypeIndex(value)];
+                valueIsChanged = false;
                 cardHeader.replaceChildren(title, closeButton);
+                cardBody.replaceChildren();
                 if (key !== undefined) {
                     if (typeof key === "number") {
                         indexInput.value = key;
@@ -391,28 +429,30 @@ const editableTree = (function () {
                     }
                 }
                 if (type.editable) {
-                    inputRadio.firstChild.checked = true;
+                    selectRadio.checked = false;
+                    inputRadio.checked = true;
                     valueInput.value = JSON.stringify(value);
                     cardBody.append(
                         valueInputLabel,
-                        selectRadio,
-                        inputRadio,
+                        selectRadioDiv,
+                        inputRadioDiv,
                         valueInput
                     );
                 } else {
-                    selectRadio.firstChild.checked = true;
+                    inputRadio.checked = false;
+                    selectRadio.checked = true;
                     valueSelect.value = type.defaultValue;
                     cardBody.append(
                         valueSelectLabel,
-                        selectRadio,
-                        inputRadio,
+                        selectRadioDiv,
+                        inputRadioDiv,
                         valueSelect
                     );
                 }
                 cardFooter.replaceChildren(okButton);
-                div.style.left = x + "px";
-                div.style.top = y + "px";
-                body.append(div);
+                card.style.left = x + "px";
+                card.style.top = y + "px";
+                body.append(card);
                 return new Promise(function (resolve) {
                     function shortcutKey(event) {
                         if (event.key === "Enter") {
@@ -424,48 +464,58 @@ const editableTree = (function () {
                         closeButton.removeEventListener("click", cancel);
                         body.removeEventListener("click", cancel);
                         body.removeEventListener("keypress", shortcutKey);
-                        div.remove();
+                        card.remove();
                         resolve();
                     }
                     closeButton.addEventListener("click", cancel);
                     body.addEventListener("click", cancel);
                     body.addEventListener("keypress", shortcutKey);
                     okButton.addEventListener("click", function () {
-                        let resultKey;
-                        let resultValue;
-                        if (cardBody.contains(nameInput)) {
-                            resultKey = nameInput.value;
-                        }
-                        if (cardBody.contains(indexInput)) {
-                            resultKey = JSON.parse(indexInput.value);
-                        }
-                        if (valueIsChanged) {
-                            if (cardBody.contains(valueSelect)) {
-                                resultValue = JSON.parse(valueSelect.value);
+                        try {
+                            let resultKey;
+                            let resultValue;
+                            if (cardBody.contains(nameInput)) {
+                                resultKey = nameInput.value;
                             }
-                            if (cardBody.contains(valueInput)) {
-                                resultValue = JSON.parse(valueInput.value);
+                            if (cardBody.contains(indexInput)) {
+                                resultKey = JSON.parse(indexInput.value);
                             }
+                            if (valueIsChanged) {
+                                if (cardBody.contains(valueSelect)) {
+                                    resultValue = JSON.parse(valueSelect.value);
+                                }
+                                if (cardBody.contains(valueInput)) {
+                                    resultValue = JSON.parse(valueInput.value);
+                                }
+                            }
+                            closeButton.removeEventListener("click", cancel);
+                            body.removeEventListener("click", cancel);
+                            body.removeEventListener("keypress", shortcutKey);
+                            card.remove();
+                            resolve({key: resultKey, value: resultValue});
+                        } catch (error) {
+                            window.alert(error.message);
                         }
-                        closeButton.removeEventListener("click", cancel);
-                        body.removeEventListener("click", cancel);
-                        body.removeEventListener("keypress", shortcutKey);
-                        div.remove();
-                        resolve({key: resultKey, value: resultValue});
                     });
                 });
             }
         };
     }());
     return {
-        async create({x, y}) {
-            console.log(
-                await editingCard.show(
-                    "New",
-                    {key: "true", value: false},
-                    {x, y}
-                )
+        create: async function ({x, y}) {
+            const result = await editingCard.show(
+                "New",
+                {value: {}},
+                {x, y}
             );
+            if (result !== undefined) {
+                const value = result.value;
+                return (
+                    value === undefined
+                    ? from({})
+                    : from(value)
+                );
+            }
         },
         from,
         setExpandLevel(level) {

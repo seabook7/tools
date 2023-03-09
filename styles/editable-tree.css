@@ -3,10 +3,10 @@
   inline-size: 1em;
   block-size: 1em;
 }
-span.editable-tree ul { margin-block: 0; }
 span.editable-tree ul,
 span.editable-tree ol {
   padding-inline-start: 1em;
+  margin-block: 0;
   list-style-type: none;
 }
 div[class^="card-footer"] > button { inline-size: 4.5rem; }
