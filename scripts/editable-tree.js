@@ -41,7 +41,9 @@ const editableTree = (function () {
     function createUserSelectNoneSpan(text) {
         const span = document.createElement("span");
         span.className = "user-select-none";
-        span.append(text);
+        if (text !== undefined) {
+            span.append(text);
+        }
         return span;
     }
     function addCollapseEvent(
@@ -91,7 +93,7 @@ const editableTree = (function () {
             ? "bi-caret-down"
             : "i-blank"
         );
-        const countSpan = document.createElement("span");
+        const countSpan = createUserSelectNoneSpan();
         const endIcon = createIcon("i-blank");
         let startText = "";
         let endText;
@@ -117,7 +119,7 @@ const editableTree = (function () {
                 const li = document.createElement("li");
                 li.append(from(
                     childValue,
-                    keys.concat(childKey),
+                    keys.concat([childKey]),
                     index < indexOfLastMember
                 ));
                 return li;
@@ -146,7 +148,7 @@ const editableTree = (function () {
                 const li = document.createElement("li");
                 li.append(from(
                     childValue,
-                    keys.concat(index),
+                    keys.concat([index]),
                     index < indexOfLastElement
                 ));
                 return li;
@@ -215,9 +217,255 @@ const editableTree = (function () {
         }
         return {key, value};
     }
+    function createDiv(className) {
+        const div = document.createElement("div");
+        div.className = className;
+        return div;
+    }
+    function createButton(className, {title}, ...childNodes) {
+        const button = document.createElement("button");
+        button.className = className;
+        button.type = "button";
+        if (title) {
+            button.title = title;
+        }
+        button.append(...childNodes);
+        return button;
+    }
+    function createInput(id, {className, disabled}) {
+        const input = document.createElement("input");
+        input.className = (
+            className
+            ? "form-control " + className
+            : "form-control"
+        );
+        input.id = id;
+        if (disabled) {
+            input.disabled = disabled;
+        }
+        return input;
+    }
+    function createLabel(className, htmlFor, text) {
+        const label = document.createElement("label");
+        label.className = className;
+        label.htmlFor = htmlFor;
+        label.append(text);
+        return label;
+    }
+    function createRadio(id, name, text, {checked, className}) {
+        const div = document.createElement("div");
+        const input = document.createElement("input");
+        div.className = (
+            className
+            ? "form-check " + className
+            : "form-check"
+        );
+        input.className = "form-check-input";
+        input.id = id;
+        input.name = name;
+        input.type = "radio";
+        if (checked) {
+            input.checked = checked;
+        }
+        div.append(input, createLabel("form-check-label", id, text));
+        return div;
+    }
+    function createOption(text) {
+        const option = document.createElement("option");
+        option.append(text);
+        return option;
+    }
+    function createSelect(id, ...options) {
+        const select = document.createElement("select");
+        select.className = "form-select";
+        select.id = id;
+        select.append(...options);
+        return select;
+    }
+    const editingCard = (function () {
+        const div = createDiv("card position-fixed shadow glass-background");
+        const cardHeader = createDiv("card-header user-select-none");
+        const cardBody = createDiv("card-body");
+        const cardFooter = createDiv("card-footer text-end");
+        const closeButton = createButton(
+            "btn-close float-end",
+            {title: "Close"}
+        );
+        const nameInput = createInput("name-input", {className: "mb-3"});
+        const nameLabel = createLabel("form-label", nameInput.id, "Name:");
+        const indexInput = createInput(
+            "index-input",
+            {className: "mb-3", disabled: true}
+        );
+        const indexLabel = createLabel("form-label", indexInput.id, "Index:");
+        const selectRadio = createRadio(
+            "select-radio",
+            "value-radio",
+            "Select",
+            {className: "form-check-inline"}
+        );
+        const inputRadio = createRadio(
+            "input-radio",
+            "value-radio",
+            "Input",
+            {className: "form-check-inline"}
+        );
+        const valueSelect = createSelect("value-select", ...elementType.filter(
+            (type) => !type.editable
+        ).map(
+            (type) => createOption(type.defaultValue)
+        ));
+        const valueSelectLabel = createLabel(
+            "form-label d-block",
+            valueSelect.id,
+            "Value:"
+        );
+        const valueInput = createInput("value-input", {});
+        const valueInputLabel = createLabel(
+            "form-label d-block",
+            valueInput.id,
+            "Value:"
+        );
+        let offsetX;
+        let offsetY;
+        let isMousedown;
+        let valueIsChanged = false;
+        div.addEventListener("click", function (event) {
+            event.stopPropagation();
+        });
+        cardHeader.addEventListener("mousedown", function (event) {
+            if (event.button === 0) {
+                isMousedown = true;
+                offsetX = event.offsetX;
+                offsetY = event.offsetY;
+            }
+        });
+        cardHeader.addEventListener("mousemove", function (event) {
+            if (isMousedown) {
+                div.style.left = event.x - offsetX + "px";
+                div.style.top = event.y - offsetY + "px";
+            }
+        });
+        cardHeader.addEventListener("mouseup", function () {
+            isMousedown = false;
+        });
+        cardHeader.addEventListener("mouseout", function () {
+            isMousedown = false;
+        });
+        closeButton.addEventListener("mousedown", function (event) {
+            event.stopPropagation();
+        });
+        selectRadio.firstChild.addEventListener("change", function () {
+            cardBody.replaceChild(valueSelectLabel, valueInputLabel);
+            cardBody.replaceChild(valueSelect, valueInput);
+        });
+        inputRadio.firstChild.addEventListener("change", function () {
+            cardBody.replaceChild(valueInputLabel, valueSelectLabel);
+            cardBody.replaceChild(valueInput, valueSelect);
+        });
+        valueSelect.addEventListener("change", function () {
+            valueIsChanged = true;
+        });
+        valueInput.addEventListener("change", function () {
+            valueIsChanged = true;
+        });
+        div.append(cardHeader, cardBody, cardFooter);
+        return {
+            show(title, {key, value}, {x, y}) {
+                const body = document.body;
+                const okButton = createButton(
+                    "btn btn-outline-success px-0",
+                    {},
+                    createIcon("bi-check2-square"),
+                    " OK"
+                );
+                const type = elementType[getTypeIndex(value)];
+                cardHeader.replaceChildren(title, closeButton);
+                if (key !== undefined) {
+                    if (typeof key === "number") {
+                        indexInput.value = key;
+                        cardBody.append(indexLabel, indexInput);
+                    } else {
+                        nameInput.value = key;
+                        cardBody.append(nameLabel, nameInput);
+                    }
+                }
+                if (type.editable) {
+                    inputRadio.firstChild.checked = true;
+                    valueInput.value = JSON.stringify(value);
+                    cardBody.append(
+                        valueInputLabel,
+                        selectRadio,
+                        inputRadio,
+                        valueInput
+                    );
+                } else {
+                    selectRadio.firstChild.checked = true;
+                    valueSelect.value = type.defaultValue;
+                    cardBody.append(
+                        valueSelectLabel,
+                        selectRadio,
+                        inputRadio,
+                        valueSelect
+                    );
+                }
+                cardFooter.replaceChildren(okButton);
+                div.style.left = x + "px";
+                div.style.top = y + "px";
+                body.append(div);
+                return new Promise(function (resolve) {
+                    function shortcutKey(event) {
+                        if (event.key === "Enter") {
+                            okButton.click();
+                            event.preventDefault();
+                        }
+                    }
+                    function cancel() {
+                        closeButton.removeEventListener("click", cancel);
+                        body.removeEventListener("click", cancel);
+                        body.removeEventListener("keypress", shortcutKey);
+                        div.remove();
+                        resolve();
+                    }
+                    closeButton.addEventListener("click", cancel);
+                    body.addEventListener("click", cancel);
+                    body.addEventListener("keypress", shortcutKey);
+                    okButton.addEventListener("click", function () {
+                        let resultKey;
+                        let resultValue;
+                        if (cardBody.contains(nameInput)) {
+                            resultKey = nameInput.value;
+                        }
+                        if (cardBody.contains(indexInput)) {
+                            resultKey = JSON.parse(indexInput.value);
+                        }
+                        if (valueIsChanged) {
+                            if (cardBody.contains(valueSelect)) {
+                                resultValue = JSON.parse(valueSelect.value);
+                            }
+                            if (cardBody.contains(valueInput)) {
+                                resultValue = JSON.parse(valueInput.value);
+                            }
+                        }
+                        closeButton.removeEventListener("click", cancel);
+                        body.removeEventListener("click", cancel);
+                        body.removeEventListener("keypress", shortcutKey);
+                        div.remove();
+                        resolve({key: resultKey, value: resultValue});
+                    });
+                });
+            }
+        };
+    }());
     return {
-        create() {
-            throw new Error();
+        async create({x, y}) {
+            console.log(
+                await editingCard.show(
+                    "New",
+                    {key: "true", value: false},
+                    {x, y}
+                )
+            );
         },
         from,
         setExpandLevel(level) {
