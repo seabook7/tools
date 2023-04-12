@@ -4,9 +4,9 @@ const fileName = document.getElementById("file-name");
 const newButton = document.getElementById("new-button");
 const openButton = document.getElementById("open-button");
 const saveButton = document.getElementById("save-button");
-const spaceCheckbox = document.getElementById("space-checkbox");
-const spaceInput = document.getElementById("space-input");
-const tree = document.getElementById("tree");
+const spacesCheckbox = document.getElementById("spaces-checkbox");
+const spacesInput = document.getElementById("spaces-input");
+const tree = document.querySelector("div.flex-fill");
 const spinner = (function () {
     const div = document.createElement("div");
     const span = document.createElement("span");
@@ -16,29 +16,36 @@ const spinner = (function () {
     div.append(span);
     return div;
 }());
+// set height of body to 100%
+(function () {
+    function resizeHeight() {
+        document.body.style.height = window.innerHeight + "px";
+    }
+    resizeHeight();
+    window.addEventListener("resize", resizeHeight);
+}());
 function getBlob(value) {
-    let space = spaceInput.value;
+    let spaces = spacesInput.value;
     const int = (
-        space === ""
+        spaces === ""
         ? 4
-        : parseInt(space)
+        : parseInt(spaces)
     );
     return (
-        spaceCheckbox.checked
+        spacesCheckbox.checked
         ? new Blob([JSON.stringify(value, null, (
             Number.isNaN(int)
-            ? space
+            ? spaces
             : int
         ))])
         : new Blob([JSON.stringify(value)])
     );
 }
-spaceInput.disabled = !spaceCheckbox.checked;
 newButton.addEventListener("click", async function (event) {
-    const {bottom, left} = newButton.getBoundingClientRect();
     event.stopPropagation();
+    const {bottom, left} = newButton.getBoundingClientRect();
     const span = await editableTree.create({x: left, y: bottom + 1});
-    if (span) {
+    if (span !== undefined) {
         tree.replaceChildren(span);
     }
 });
@@ -46,11 +53,9 @@ openButton.addEventListener("click", async function () {
     const file = await fileIO.open("application/json");
     if (file) {
         fileName.value = file.name;
-        tree.replaceChildren();
-        tree.parentNode.append(spinner);
+        tree.replaceChildren(spinner);
         try {
             const value = JSON.parse(await file.text());
-            spinner.remove();
             tree.replaceChildren(editableTree.from(value));
         } catch (error) {
             window.alert(error.message);
@@ -58,14 +63,17 @@ openButton.addEventListener("click", async function () {
     }
 });
 saveButton.addEventListener("click", function () {
-    const {value} = editableTree.toValue(tree.firstChild);
-    fileIO.download(getBlob(value), fileName.value);
+    if (tree.firstChild !== null) {
+        const [value] = editableTree.toValue(tree.firstChild);
+        fileIO.download(getBlob(value), fileName.value);
+    }
 });
-spaceCheckbox.addEventListener("click", function () {
-    spaceInput.disabled = !spaceCheckbox.checked;
-    spaceInput.value = (
-        spaceCheckbox.checked
+spacesCheckbox.addEventListener("click", function () {
+    spacesInput.disabled = !spacesCheckbox.checked;
+    spacesInput.value = (
+        spacesCheckbox.checked
         ? ""
         : "disabled"
     );
 });
+spacesInput.disabled = !spacesCheckbox.checked;
