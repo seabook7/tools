@@ -262,17 +262,19 @@ const editableTree = (function () {
         if (firstChild.tagName === "SPAN") {
             const keys = JSON.parse(firstChild.dataset.keys);
             const last = keys.length - 1;
-            keys[last] += initial;
-            do {
-                const indexSpan = Array.from(firstChild.children).find(
-                    (child) => child.tagName === "SPAN"
-                );
-                firstChild.dataset.keys = JSON.stringify(keys);
-                indexSpan.replaceChildren(keys[last] + ": ");
-                li = li.nextSibling;
-                firstChild = li.firstChild;
-                keys[last] += 1;
-            } while (firstChild.tagName === "SPAN");
+            if (typeof keys[last] === "number") {
+                keys[last] += initial;
+                do {
+                    const indexSpan = Array.from(firstChild.children).find(
+                        (child) => child.tagName === "SPAN"
+                    );
+                    firstChild.dataset.keys = JSON.stringify(keys);
+                    indexSpan.replaceChildren(keys[last] + ": ");
+                    li = li.nextSibling;
+                    firstChild = li.firstChild;
+                    keys[last] += 1;
+                } while (firstChild.tagName === "SPAN");
+            }
         }
     }
     function createInsertIcon(span) {
