@@ -1,179 +1,339 @@
 /*jslint browser*/
 const editableTree = (function () {
-    const elementType = [
-        {defaultValue: "{}", editable: false, name: "object"},
-        {defaultValue: "[]", editable: false, name: "array"},
-        {defaultValue: "\"\"", editable: true, name: "string"},
-        {defaultValue: "0", editable: true, name: "number"},
-        {defaultValue: "true", editable: false, name: "\"true\""},
-        {defaultValue: "false", editable: false, name: "\"false\""},
-        {defaultValue: "null", editable: false, name: "\"null\""}
-    ];
     let expandLevel = 1;
-    function createIcon(className) {
-        const icon = document.createElement("i");
-        icon.className = className;
-        return icon;
-    }
-    function getTypeIndex(value) {
+    function getDefault(value) {
         switch (typeof value) {
         case "string":
-            return 2;
+            return "";
         case "number":
-            return 3;
+            return 0;
         case "boolean":
-            return (
-                value
-                ? 4
-                : 5
-            );
+            return value;
         case "object":
             if (value === null) {
-                return 6;
+                return value;
             }
             if (Array.isArray(value)) {
-                return 1;
+                return [];
             }
-            return 0;
+            return {};
         }
     }
-    const editingCard = (function () {
-        const body = document.body;
+    /**
+     * @param {HTMLElement} elementToDrag
+     * @param {HTMLElement} elementToMove
+     */
+    function draggable(elementToDrag, elementToMove = elementToDrag) {
         let isMousedown = false;
         let offsetX;
         let offsetY;
-        let valueIsChanged;
-        function createDiv(className) {
-            const div = document.createElement("div");
-            div.className = className;
-            return div;
-        }
-        function createButton(className, {title}, ...childNodes) {
-            const button = document.createElement("button");
-            button.className = className;
-            button.type = "button";
-            if (title) {
-                button.title = title;
-            }
-            button.append(...childNodes);
-            return button;
-        }
-        function createInput(id, {className, disabled}) {
-            const input = document.createElement("input");
-            input.className = (
-                className
-                ? "form-control " + className
-                : "form-control"
-            );
-            input.id = id;
-            if (disabled) {
-                input.disabled = disabled;
-            }
-            return input;
-        }
-        function createLabel(className, htmlFor, text) {
-            const label = document.createElement("label");
-            label.className = className;
-            label.htmlFor = htmlFor;
-            label.append(text);
-            return label;
-        }
-        function createRadio(id, name, text, {checked, className}) {
-            const div = document.createElement("div");
-            const input = document.createElement("input");
-            div.className = (
-                className
-                ? "form-check " + className
-                : "form-check"
-            );
-            input.className = "form-check-input";
-            input.id = id;
-            input.name = name;
-            input.type = "radio";
-            if (checked) {
-                input.checked = checked;
-            }
-            div.append(input, createLabel("form-check-label", id, text));
-            return [div, input];
-        }
-        function createOption(text) {
-            const option = document.createElement("option");
-            option.append(text);
-            return option;
-        }
-        function createSelect(id, ...options) {
-            const select = document.createElement("select");
-            select.className = "form-select";
-            select.id = id;
-            select.append(...options);
-            return select;
-        }
-        const card = createDiv("card position-fixed shadow editing-card");
-        const cardHeader = createDiv("card-header user-select-none");
-        const cardBody = createDiv("card-body");
-        const cardFooter = createDiv("card-footer text-end");
-        const closeButton = createButton(
-            "btn-close float-end",
-            {title: "Close"}
-        );
-        const nameInput = createInput("name-input", {className: "mb-3"});
-        const nameLabel = createLabel("form-label", nameInput.id, "Name:");
-        const indexInput = createInput(
-            "index-input",
-            {className: "mb-3", disabled: true}
-        );
-        const indexLabel = createLabel("form-label", indexInput.id, "Index:");
-        const [selectRadioDiv, selectRadio] = createRadio(
-            "select-radio",
-            "value-radio",
-            "Select",
-            {className: "form-check-inline"}
-        );
-        const [inputRadioDiv, inputRadio] = createRadio(
-            "input-radio",
-            "value-radio",
-            "Input",
-            {className: "form-check-inline"}
-        );
-        const valueSelect = createSelect("value-select", ...elementType.filter(
-            (type) => !type.editable
-        ).map(
-            (type) => createOption(type.defaultValue)
-        ));
-        const valueSelectLabel = createLabel(
-            "form-label d-block",
-            valueSelect.id,
-            "Value:"
-        );
-        const valueInput = createInput("value-input", {});
-        const valueInputLabel = createLabel(
-            "form-label d-block",
-            valueInput.id,
-            "Value:"
-        );
-        card.addEventListener("click", function (event) {
-            event.stopPropagation();
-        });
-        cardHeader.addEventListener("mousedown", function (event) {
-            // Card and card header are in the same position, so there is
-            // no need to calculate the distance between the two elements.
+        elementToDrag.addEventListener("mousedown", function (event) {
             if (event.button === 0) {
+                const {x, y} = elementToMove.getBoundingClientRect();
                 isMousedown = true;
-                offsetX = event.offsetX;
-                offsetY = event.offsetY;
+                offsetX = event.clientX - Math.floor(x);
+                offsetY = event.clientY - Math.floor(y);
             }
         });
-        body.addEventListener("mousemove", function (event) {
+        document.body.addEventListener("mousemove", function (event) {
             if (isMousedown) {
-                card.style.left = event.x - offsetX + "px";
-                card.style.top = event.y - offsetY + "px";
+                elementToMove.style.left = event.clientX - offsetX + "px";
+                elementToMove.style.top = event.clientY - offsetY + "px";
             }
         });
         window.addEventListener("mouseup", function () {
             isMousedown = false;
         });
-        closeButton.addEventListener("mousedown", function (event) {
+    }
+    function createEditingCard() {
+        function createDiv(className) {
+            const div = document.createElement("div");
+            div.className = className;
+            return div;
+        }
+        const card = createDiv(
+            "card shadow position-absolute bg-transparent editing-card"
+        );
+        const cardHeader = createDiv("card-header user-select-none");
+        const cardBody = createDiv("card-body");
+        const cardFooter = createDiv("card-footer text-end");
+        card.append(cardHeader, cardBody, cardFooter);
+        draggable(cardHeader, card);
+        return [card, cardHeader, cardBody, cardFooter];
+    }
+    function createCloseButton() {
+        const button = document.createElement("button");
+        button.className = "btn-close float-end";
+        button.type = "button";
+        button.title = "Close";
+        return button;
+    }
+    function createNameInput() {
+        const row = document.createElement("div");
+        const col = document.createElement("div");
+        const input = document.createElement("input");
+        const label = document.createElement("label");
+        row.className = "row g-0 mb-3";
+        col.className = "col-9";
+        input.className = "form-control";
+        input.id = "name-input";
+        label.className = "col-3 col-form-label";
+        label.htmlFor = input.id;
+        label.append("Name:");
+        col.append(input);
+        row.append(label, col);
+        return [row, input];
+    }
+    function createIndexInput() {
+        const row = document.createElement("div");
+        const col = document.createElement("div");
+        const input = document.createElement("input");
+        const label = document.createElement("label");
+        row.className = "row g-0 mb-3";
+        col.className = "col-9";
+        input.className = "form-control-plaintext";
+        input.id = "index-input";
+        input.readOnly = true;
+        label.className = "col-3 col-form-label";
+        label.htmlFor = input.id;
+        label.append("Index:");
+        col.append(input);
+        row.append(label, col);
+        return [row, input];
+    }
+    function createValueSelect() {
+        const select = document.createElement("select");
+        const label = document.createElement("label");
+        function createOption(childNode) {
+            const option = document.createElement("option");
+            option.append(childNode);
+            return option;
+        }
+        select.className = "form-select";
+        select.id = "value-select";
+        label.className = "form-label me-3";
+        label.htmlFor = select.id;
+        select.append(...["{}", "[]", "true", "false", "null"].map(
+            createOption
+        ));
+        label.append("Value: ");
+        return [select, label];
+    }
+    function createValueInput() {
+        const input = document.createElement("input");
+        const label = document.createElement("label");
+        input.className = "form-control";
+        input.id = "value-input";
+        label.className = "form-label me-3";
+        label.htmlFor = input.id;
+        label.append("Value: ");
+        return [input, label];
+    }
+    function createSelectRadio() {
+        const div = document.createElement("div");
+        const input = document.createElement("input");
+        const label = document.createElement("label");
+        div.className = "form-check form-check-inline";
+        input.className = "form-check-input";
+        input.id = "select-radio";
+        input.name = "value-radio";
+        input.type = "radio";
+        label.className = "form-check-label";
+        label.htmlFor = input.id;
+        label.append("Select");
+        div.append(input, label);
+        return [div, input];
+    }
+    function createInputRadio() {
+        const div = document.createElement("div");
+        const input = document.createElement("input");
+        const label = document.createElement("label");
+        div.className = "form-check form-check-inline";
+        input.className = "form-check-input";
+        input.id = "input-radio";
+        input.name = "value-radio";
+        input.type = "radio";
+        label.className = "form-check-label";
+        label.htmlFor = input.id;
+        label.append("Input");
+        div.append(input, label);
+        return [div, input];
+    }
+    function createIcon(className) {
+        const icon = document.createElement("i");
+        icon.className = className;
+        return icon;
+    }
+    function createOKButton() {
+        const button = document.createElement("button");
+        button.className = "btn btn-outline-success ok-btn";
+        button.type = "button";
+        button.append(createIcon("bi-check2-square"), " OK");
+        return button;
+    }
+    function createNotSelectableSpan(childNode) {
+        const span = document.createElement("span");
+        span.className = "user-select-none";
+        span.append(childNode);
+        return span;
+    }
+    function createItem(childNode) {
+        const item = document.createElement("li");
+        item.append(childNode);
+        return item;
+    }
+    function createList(isOrdered, ...childNodeOfItems) {
+        const list = document.createElement(
+            isOrdered
+            ? "ol"
+            : "ul"
+        );
+        list.append(...childNodeOfItems.map(createItem));
+        return list;
+    }
+    function createAddIcon(span) {
+        const title = "Add";
+        const icon = createIcon("bi-plus-square ms-3 text-primary");
+        icon.title = title;
+        icon.setAttribute("role", "button");
+        icon.addEventListener("click", async function (event) {
             event.stopPropagation();
+            const {
+                clientX: x,
+                clientY: y
+            } = event;
+            const [value, keys] = toValue(span);
+            let result = "";
+            if (Array.isArray(value)) {
+                const length = value.length;
+                if (length > 0) {
+                    result = getDefault(value[length - 1]);
+                }
+                keys.push(length);
+            } else {
+                const values = Object.values(value);
+                const count = values.length;
+                if (count > 0) {
+                    result = getDefault(values[count - 1]);
+                }
+                keys.push("");
+            }
+            result = await editingCard.show({x, y}, title, result, keys);
+            if (result !== undefined) {
+                const li = icon.parentNode;
+                const previous = li.previousSibling;
+                if (previous !== null) {
+                    const endTextNode = Array.from(
+                        previous.firstChild.childNodes
+                    ).findLast(
+                        (node) => node.nodeType === 3
+                    );
+                    endTextNode.nodeValue += ",";
+                }
+                li.parentNode.insertBefore(
+                    createItem(from(result, keys)),
+                    li
+                );
+            }
+        });
+        return icon;
+    }
+    function createEditIcon(span) {
+        const title = "Edit";
+        const icon = createIcon("bi-pencil-square ms-2 text-success");
+        icon.title = title;
+        icon.setAttribute("role", "button");
+        icon.addEventListener("click", async function (event) {
+            event.stopPropagation();
+            const {
+                clientX: x,
+                clientY: y
+            } = event;
+            const [value, keys, notLast] = toValue(span);
+            const result = await editingCard.show({x, y}, title, value, keys);
+            if (result !== undefined) {
+                span.parentNode.replaceChild(from(result, keys, notLast), span);
+            }
+        });
+        return icon;
+    }
+    function resetIndexes(li, initial) {
+        let firstChild = li.firstChild;
+        if (firstChild.tagName === "SPAN") {
+            const keys = JSON.parse(firstChild.dataset.keys);
+            const last = keys.length - 1;
+            keys[last] += initial;
+            do {
+                const indexSpan = Array.from(firstChild.children).find(
+                    (child) => child.tagName === "SPAN"
+                );
+                firstChild.dataset.keys = JSON.stringify(keys);
+                indexSpan.replaceChildren(keys[last] + ": ");
+                li = li.nextSibling;
+                firstChild = li.firstChild;
+                keys[last] += 1;
+            } while (firstChild.tagName === "SPAN");
+        }
+    }
+    function createInsertIcon(span) {
+        const title = "Insert";
+        const icon = createIcon("bi-plus-square ms-2 text-primary");
+        icon.title = title;
+        icon.setAttribute("role", "button");
+        icon.addEventListener("click", async function (event) {
+            event.stopPropagation();
+            const {
+                clientX: x,
+                clientY: y
+            } = event;
+            const [value, keys] = toValue(span);
+            const last = keys.length - 1;
+            let result = getDefault(value);
+            if (last > -1 && typeof keys[last] === "string") {
+                keys[last] = "";
+            }
+            result = await editingCard.show({x, y}, title, result, keys);
+            if (result !== undefined) {
+                const li = span.parentNode;
+                li.parentNode.insertBefore(
+                    createItem(from(result, keys, true)),
+                    li
+                );
+                resetIndexes(li, 1);
+            }
+        });
+        return icon;
+    }
+    function createDeleteIcon(span) {
+        const icon = createIcon("bi-dash-square ms-2 text-danger");
+        icon.title = "Delete";
+        icon.setAttribute("role", "button");
+        icon.addEventListener("click", function () {
+            const li = span.parentNode;
+            const next = li.nextSibling;
+            li.remove();
+            resetIndexes(next, -1);
+        });
+        return icon;
+    }
+    const editingCard = (function () {
+        const [card, cardHeader, cardBody, cardFooter] = createEditingCard();
+        const closeButton = createCloseButton();
+        const [nameInputDiv, nameInput] = createNameInput();
+        const [indexInputDiv, indexInput] = createIndexInput();
+        const [valueSelect, valueSelectLabel] = createValueSelect();
+        const [valueInput, valueInputLabel] = createValueInput();
+        const [selectRadioDiv, selectRadio] = createSelectRadio();
+        const [inputRadioDiv, inputRadio] = createInputRadio();
+        let valueIsChanged;
+        card.addEventListener("click", function (event) {
+            event.stopPropagation();
+        });
+        valueSelect.addEventListener("change", function () {
+            valueIsChanged = true;
+        });
+        valueInput.addEventListener("input", function () {
+            valueIsChanged = true;
         });
         selectRadio.addEventListener("change", function () {
             cardBody.replaceChild(valueSelectLabel, valueInputLabel);
@@ -186,38 +346,37 @@ const editableTree = (function () {
             cardBody.replaceChild(valueInput, valueSelect);
             valueIsChanged = true;
         });
-        valueSelect.addEventListener("change", function () {
-            valueIsChanged = true;
-        });
-        valueInput.addEventListener("change", function () {
-            valueIsChanged = true;
-        });
-        card.append(cardHeader, cardBody, cardFooter);
         return {
-            show(title, {x, y}, value, keys = []) {
-                const okButton = createButton(
-                    "btn btn-outline-success px-0 ok-btn",
-                    {},
-                    createIcon("bi-check2-square"),
-                    " OK"
-                );
-                const type = elementType[getTypeIndex(value)];
+            show({x, y}, title, value, keys = []) {
+                const okButton = createOKButton();
+                const type = typeof value;
                 const last = keys.length - 1;
-                const keyIsExists = last > -1;
                 valueIsChanged = false;
+                card.style.left = Math.floor(x) + "px";
+                card.style.top = Math.floor(y) + "px";
                 cardHeader.replaceChildren(title, closeButton);
                 cardBody.replaceChildren();
-                if (keyIsExists) {
+                if (last > -1) {
                     const key = keys[last];
-                    if (typeof key === "number") {
-                        indexInput.value = key;
-                        cardBody.append(indexLabel, indexInput);
-                    } else {
+                    if (typeof key === "string") {
                         nameInput.value = key;
-                        cardBody.append(nameLabel, nameInput);
+                        cardBody.append(nameInputDiv);
+                    } else {
+                        indexInput.value = key;
+                        cardBody.append(indexInputDiv);
                     }
                 }
-                if (type.editable) {
+                if (type === "boolean" || type === "object") {
+                    inputRadio.checked = false;
+                    selectRadio.checked = true;
+                    valueSelect.value = JSON.stringify(getDefault(value));
+                    cardBody.append(
+                        valueSelectLabel,
+                        selectRadioDiv,
+                        inputRadioDiv,
+                        valueSelect
+                    );
+                } else {
                     selectRadio.checked = false;
                     inputRadio.checked = true;
                     valueInput.value = JSON.stringify(value);
@@ -227,23 +386,11 @@ const editableTree = (function () {
                         inputRadioDiv,
                         valueInput
                     );
-                } else {
-                    inputRadio.checked = false;
-                    selectRadio.checked = true;
-                    valueSelect.value = type.defaultValue;
-                    cardBody.append(
-                        valueSelectLabel,
-                        selectRadioDiv,
-                        inputRadioDiv,
-                        valueSelect
-                    );
                 }
                 cardFooter.replaceChildren(okButton);
-                card.style.left = x + "px";
-                card.style.top = y + "px";
-                body.append(card);
                 return new Promise(function (resolve) {
-                    function shortcutKey(event) {
+                    const body = document.body;
+                    function shortcutKeys(event) {
                         switch (event.key) {
                         case "Escape":
                             event.preventDefault();
@@ -258,22 +405,20 @@ const editableTree = (function () {
                     function cancel() {
                         closeButton.removeEventListener("click", cancel);
                         body.removeEventListener("click", cancel);
-                        body.removeEventListener("keydown", shortcutKey);
+                        body.removeEventListener("keydown", shortcutKeys);
                         card.remove();
                         resolve();
                     }
+                    if (body.contains(card)) {
+                        closeButton.click();
+                    }
                     closeButton.addEventListener("click", cancel);
                     body.addEventListener("click", cancel);
-                    body.addEventListener("keydown", shortcutKey);
+                    body.addEventListener("keydown", shortcutKeys);
                     okButton.addEventListener("click", function () {
                         try {
-                            if (keyIsExists) {
-                                if (cardBody.contains(nameInput)) {
-                                    keys[last] = nameInput.value;
-                                }
-                                if (cardBody.contains(indexInput)) {
-                                    keys[last] = JSON.parse(indexInput.value);
-                                }
+                            if (cardBody.contains(nameInput)) {
+                                keys[last] = nameInput.value;
                             }
                             if (valueIsChanged) {
                                 value = JSON.parse(
@@ -284,226 +429,124 @@ const editableTree = (function () {
                             }
                             closeButton.removeEventListener("click", cancel);
                             body.removeEventListener("click", cancel);
-                            body.removeEventListener("keydown", shortcutKey);
+                            body.removeEventListener("keydown", shortcutKeys);
                             card.remove();
-                            resolve([value, keys]);
+                            resolve(value);
                         } catch (error) {
                             window.alert(error.message);
                         }
                     });
+                    body.append(card);
                 });
             }
         };
     }());
-    function createUserSelectNoneSpan(text) {
-        const span = document.createElement("span");
-        span.className = "user-select-none";
-        span.append(text);
-        return span;
-    }
-    async function create({x, y}, defaultValue = {}) {
-        const result = await editingCard.show("New", {x, y}, defaultValue);
-        if (result !== undefined) {
-            return from(...result);
-        }
-    }
-    function createListItemForAdd(span, keys) {
-        const title = "Add";
-        const li = document.createElement("li");
-        const icon = createIcon("bi-plus-square text-primary");
-        icon.title = title;
-        icon.setAttribute("role", "button");
-        icon.addEventListener("click", async function (event) {
-            event.stopPropagation();
-            const previous = li.previousSibling;
-            let value = "";
-            if (previous !== null) {
-                [value] = toValue(previous.firstChild);
-                value = JSON.parse(
-                    elementType[getTypeIndex(value)].defaultValue
-                );
-            }
-            const result = await editingCard.show(title, event, value, keys);
-            if (result !== undefined) {
-                const [parentValue, parentKeys] = toValue(span);
-                const [childvalue, childKeys] = result;
-                const childKey = childKeys[childKeys.length - 1];
-                parentValue[childKey] = childvalue;
-                const node = from(parentValue, parentKeys);
-                const startIcon = Array.from(node.children).find(
-                    (element) => element.tagName === "I"
-                );
-                span.parentNode.replaceChild(node, span);
-                if (parentKeys !== undefined
-                && parentKeys.length >= expandLevel) {
-                    startIcon.click();
-                }
-            }
-        });
-        li.append(createIcon("i-blank"), icon);
-        return li;
-    }
-    function createEditIcon(span) {
-        const title = "Edit";
-        const icon = createIcon("bi-pencil-square text-success ps-2");
-        icon.title = title;
-        icon.setAttribute("role", "button");
-        icon.addEventListener("click", async function (event) {
-            event.stopPropagation();
-            const node = await create(
-                title,
-                {hasNextValue, keys, value},
-                event
-            );
-            if (node !== undefined) {
-                const span = icon.parentNode;
-                span.parentNode.replaceChild(node, span);
-            }
-        });
-        return icon;
-    }
-    function createInsertIcon(span) {
-        const icon = createIcon("bi-plus-square text-primary ps-2");
-        return icon;
-    }
-    function createDeleteIcon(hasNextValue) {
-        const icon = createIcon("bi-dash-square text-danger ps-2");
-        icon.title = "Delete";
-        icon.setAttribute("role", "button");
-        icon.addEventListener("click", function () {
-            const span = icon.parentNode;
-            if (hasNextValue) {
-                const next = span.parentNode.nextSibling.firstChild;
-                const key = JSON.parse(next.dataset.keys).pop();
-                if (typeof key === "number") {
-                    setIndexes(next, key - 1);
-                }
-            }
-            span.parentNode.remove();
-        });
-        return icon;
-    }
     /**
      * @param {*} value
      * @param {Array<string | number>} keys
-     * @param {Boolean} hasNextValue
-     * @returns {HTMLSpanElement}
+     * @param {Boolean} notLast
+     * @returns {HTMLSpanElement} span
      */
-    function from(value, keys = [], hasNextValue = false) {
-        const span = document.createElement("span");
-        const typeIndex = getTypeIndex(value);
-        const isObject = typeIndex === 0;
-        const isArray = typeIndex === 1;
+    function from(value, keys = [], notLast = false) {
         const level = keys.length;
         const isRoot = level === 0;
-        const startIcon = createIcon(
-            (isObject || isArray)
-            ? "bi-caret-down"
-            : "i-blank"
-        );
+        const span = document.createElement("span");
+        const startIcon = createIcon("i-blank");
         const endIcon = createIcon("i-blank");
         let startText = "";
         let endText;
-        function addCollapseEvent(listElement, count, text) {
-            const hasCountSpan = count > 0;
+        function addCollapseEvent(list, text) {
+            let count;
+            let hasCountSpan;
             let countSpan;
-            function createCountSpan() {
-                text = count + " " + text;
-                if (count > 1) {
-                    text += "s";
-                }
-                return createUserSelectNoneSpan(text);
-            }
-            if (hasCountSpan) {
-                countSpan = createCountSpan();
-            }
-            if (level >= expandLevel) {
+            function collapse() {
                 startIcon.className = "bi-caret-right";
-                listElement.hidden = true;
+                list.hidden = true;
+                count = list.childNodes.length - 1;
+                hasCountSpan = count > 0;
                 if (hasCountSpan) {
-                    span.insertBefore(countSpan, listElement);
+                    let countText = count + " " + text;
+                    if (count > 1) {
+                        countText += "s";
+                    }
+                    countSpan = createNotSelectableSpan(countText);
+                    span.insertBefore(countSpan, list);
                 }
                 endIcon.hidden = true;
             }
+            function expand() {
+                startIcon.className = "bi-caret-down";
+                list.hidden = false;
+                if (hasCountSpan) {
+                    countSpan.remove();
+                }
+                endIcon.hidden = false;
+            }
+            if (level >= expandLevel) {
+                collapse();
+            } else {
+                startIcon.className = "bi-caret-down";
+            }
             startIcon.setAttribute("role", "button");
             startIcon.addEventListener("click", function () {
-                if (listElement.hidden) {
-                    startIcon.className = "bi-caret-down";
-                    listElement.hidden = false;
-                    if (hasCountSpan) {
-                        countSpan.remove();
-                    }
-                    endIcon.hidden = false;
+                if (list.hidden) {
+                    expand();
                 } else {
-                    startIcon.className = "bi-caret-right";
-                    listElement.hidden = true;
-                    if (hasCountSpan) {
-                        span.insertBefore(countSpan, listElement);
-                    }
-                    endIcon.hidden = true;
+                    collapse();
                 }
             });
         }
+        span.append(startIcon);
         if (isRoot) {
             span.className = "font-monospace editable-tree";
-        }
-        span.append(startIcon);
-        if (!isRoot) {
+        } else {
             const key = keys[level - 1];
             span.dataset.keys = JSON.stringify(keys);
             if (typeof key === "number") {
-                span.append(createUserSelectNoneSpan(key + ": "));
+                span.append(createNotSelectableSpan(key + ": "));
             } else {
                 startText = JSON.stringify(key) + ": ";
             }
         }
-        if (isObject) {
-            const ul = document.createElement("ul");
-            const entries = Object.entries(value);
-            const count = entries.length;
-            const indexOfLastMember = count - 1;
-            startText += "{";
-            ul.append(...entries.map(function ([childKey, childValue], index) {
-                const li = document.createElement("li");
-                li.append(from(
-                    childValue,
-                    keys.concat([childKey]),
-                    index < indexOfLastMember
-                ));
-                return li;
-            }), createListItemForAdd(span, keys.concat([""])));
-            span.append(startText, ul, endIcon);
-            addCollapseEvent(ul, count, "member");
-            endText = "}";
-        } else if (isArray) {
-            const ol = document.createElement("ol");
-            const length = value.length;
-            const indexOfLastElement = length - 1;
-            startText += "[";
-            ol.append(...value.map(function (childValue, index) {
-                const li = document.createElement("li");
-                li.append(from(
-                    childValue,
-                    keys.concat([index]),
-                    index < indexOfLastElement
-                ));
-                return li;
-            }), createListItemForAdd(span, keys.concat([length])));
-            span.append(startText, ol, endIcon);
-            addCollapseEvent(ol, length, "element");
-            endText = "]";
-        } else {
+        if (value === null || typeof value !== "object") {
             const jsonOfValue = JSON.stringify(value);
             span.dataset.value = jsonOfValue;
             endText = startText + jsonOfValue;
+        } else {
+            if (Array.isArray(value)) {
+                const indexOfLastElement = value.length - 1;
+                const ol = createList(true, ...value.map(
+                    (childValue, index) => from(
+                        childValue,
+                        keys.concat([index]),
+                        index < indexOfLastElement
+                    )
+                ), createAddIcon(span));
+                span.append(startText + "[", ol, endIcon);
+                addCollapseEvent(ol, "element");
+                endText = "]";
+            } else {
+                const entries = Object.entries(value);
+                const indexOfLastMember = entries.length - 1;
+                const ul = createList(false, ...entries.map(
+                    function ([childKey, childValue], index) {
+                        return from(
+                            childValue,
+                            keys.concat([childKey]),
+                            index < indexOfLastMember
+                        );
+                    }
+                ), createAddIcon(span));
+                span.append(startText + "{", ul, endIcon);
+                addCollapseEvent(ul, "member");
+                endText = "}";
+            }
         }
-        if (hasNextValue) {
-            span.dataset.hasNextValue = "";
+        if (notLast) {
+            span.dataset.notLast = "";
             endText += ",";
         }
-        span.title = elementType[typeIndex].name;
-        span.append(endText);
-        span.append(createEditIcon(span));
+        span.append(endText, createEditIcon(span));
         if (!isRoot) {
             span.append(createInsertIcon(span), createDeleteIcon(span));
         }
@@ -511,11 +554,15 @@ const editableTree = (function () {
     }
     /**
      * @param {HTMLSpanElement} span
-     * @returns {[*, Array<string | number>]} [value, keys]
+     * @returns {[*, Array<string | number>, boolean]} [value, keys, notLast]
      */
     function toValue(span) {
-        const {keys: jsonOfKeys, value: jsonOfValue, hasNextValue} = span.dataset;
-        let keys;
+        const {
+            keys: jsonOfKeys,
+            value: jsonOfValue,
+            notLast
+        } = span.dataset;
+        let keys = [];
         let value;
         if (jsonOfKeys !== undefined) {
             keys = JSON.parse(jsonOfKeys);
@@ -548,7 +595,13 @@ const editableTree = (function () {
         } else {
             value = JSON.parse(jsonOfValue);
         }
-        return [value, keys, hasNextValue === ""];
+        return [value, keys, notLast === ""];
+    }
+    async function create({x, y}, defaultValue = {}) {
+        const result = await editingCard.show({x, y}, "New", defaultValue);
+        if (result !== undefined) {
+            return from(result);
+        }
     }
     return {
         create,
