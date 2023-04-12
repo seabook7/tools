@@ -16,9 +16,14 @@ const spinner = (function () {
     div.append(span);
     return div;
 }());
-function resizeBodyHeight() {
-    document.body.style.height = window.innerHeight + "px";
-}
+// set height of body to 100%
+(function () {
+    function resizeHeight() {
+        document.body.style.height = window.innerHeight + "px";
+    }
+    resizeHeight();
+    window.addEventListener("resize", resizeHeight);
+}());
 function getBlob(value) {
     let spaces = spacesInput.value;
     const int = (
@@ -36,12 +41,11 @@ function getBlob(value) {
         : new Blob([JSON.stringify(value)])
     );
 }
-window.addEventListener("resize", resizeBodyHeight);
 newButton.addEventListener("click", async function (event) {
-    const {bottom, left} = newButton.getBoundingClientRect();
     event.stopPropagation();
+    const {bottom, left} = newButton.getBoundingClientRect();
     const span = await editableTree.create({x: left, y: bottom + 1});
-    if (span) {
+    if (span !== undefined) {
         tree.replaceChildren(span);
     }
 });
@@ -59,8 +63,10 @@ openButton.addEventListener("click", async function () {
     }
 });
 saveButton.addEventListener("click", function () {
-    const {value} = editableTree.toValue(tree.firstChild);
-    fileIO.download(getBlob(value), fileName.value);
+    if (tree.firstChild !== null) {
+        const [value] = editableTree.toValue(tree.firstChild);
+        fileIO.download(getBlob(value), fileName.value);
+    }
 });
 spacesCheckbox.addEventListener("click", function () {
     spacesInput.disabled = !spacesCheckbox.checked;
@@ -71,4 +77,3 @@ spacesCheckbox.addEventListener("click", function () {
     );
 });
 spacesInput.disabled = !spacesCheckbox.checked;
-resizeBodyHeight();
