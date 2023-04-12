@@ -1,7 +1,4 @@
 #new-button,
-#open-button {
-  z-index: auto;
-  inline-size: 4.5rem;
-}
+#open-button { inline-size: 4.5rem; }
 #save-button,
 a[href="index.html"] { inline-size: 6rem; }
