@@ -172,11 +172,11 @@
             }
         });
     }
-    function createAttributesText(attributes, attributeOrder) {
-        const array = Array.from(attributes);
-        let orderIsWrong = false;
-        let index = 0;
+    function createStartTags(name, element) {
+        const array = Array.from(element.attributes);
         const length = array.length - 1;
+        let index = 0;
+        let orderIsWrong = false;
         while (index < length) {
             const next = index + 1;
             if (
@@ -191,9 +191,11 @@
             array.sort(function ({name: a}, {name: b}) {
                 return findAttributeOrder(a) - findAttributeOrder(b);
             });
-            attributeOrder.hasChanged = true;
+            messageList.orderChangedElementList.push(
+                getNameWithId(name, element)
+            );
         }
-        return array.reduce(function (text, {name, value}) {
+        return "<" + name + array.reduce(function (text, {name, value}) {
             text += " " + name;
             if (
                 !(name.startsWith("data-") && value === "")
@@ -202,20 +204,7 @@
                 text += "=\"" + escape(value, "'") + "\"";
             }
             return text;
-        }, "");
-    }
-    function createStartTags(name, element) {
-        const attributeOrder = {hasChanged: false};
-        const startTags = "<" + name + createAttributesText(
-            element.attributes,
-            attributeOrder
-        ) + ">";
-        if (attributeOrder.hasChanged) {
-            messageList.orderChangedElementList.push(
-                getNameWithId(name, element)
-            );
-        }
-        return startTags;
+        }, "") + ">";
     }
     /**
      * Determines whether the node is a text node and is not whitespace,
