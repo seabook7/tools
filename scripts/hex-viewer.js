@@ -1,36 +1,35 @@
-/*global
-    fileIO
-*/
-/*jslint
-    browser
-*/
+/*global fileIO*/
+/*jslint browser*/
 const fileName = document.getElementById("file-name");
 const fileSize = document.getElementById("file-size");
 const openButton = document.getElementById("open-button");
-const hexText = document.getElementById("hex-text");
-function buildText(array) {
-    let i = 0;
-    let text = "         | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\r\n";
-    text += "---------+------------------------------------------------\r\n";
-    while (i < array.length) {
-        const remainder = i % 16;
+const header = document.getElementById("header");
+const address = document.getElementById("address");
+const hex = document.getElementById("hex");
+function build(array) {
+    let addressText = "";
+    let hexText = "";
+    array.forEach(function (uint8, index) {
+        const remainder = index % 16;
         if (remainder === 0) {
-            text += i.toString(16).toUpperCase().padStart(8, "0") + " | ";
+            addressText += index.toString(16).toUpperCase().padStart(8, "0")
+            + "\n";
         }
-        text += array[i].toString(16).toUpperCase().padStart(2, "0");
-        text += (
+        hexText += uint8.toString(16).toUpperCase().padStart(2, "0");
+        hexText += (
             remainder < 15
             ? " "
-            : "\r\n"
+            : "\n"
         );
-        i += 1;
-    }
-    return text;
+    });
+    header.hidden = false;
+    address.replaceChildren(addressText);
+    hex.replaceChildren(hexText);
 }
 openButton.addEventListener("click", async function () {
     const file = await fileIO.open();
     fileName.value = file.name;
     fileSize.value = file.size + " bytes";
     const array = new Uint8Array(await file.arrayBuffer());
-    hexText.replaceChildren(buildText(array));
+    build(array);
 });
