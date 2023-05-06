@@ -1,3 +1,6 @@
 #open-button { inline-size: 4.5rem; }
 label[for="file-size"] { inline-size: 5.5rem; }
 a[href="index.html"] { inline-size: 6rem; }
+#header-address,
+#address,
+#hex {white-space: pre;}
