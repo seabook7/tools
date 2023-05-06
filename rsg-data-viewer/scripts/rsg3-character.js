@@ -84,13 +84,11 @@ const rsg3Character = function (rsg3Rom) {
         };
     }
     return {
-        data: [
-            utility.getFixedLengthBuffers(rsg3Rom, 0x3E0600, 48, 48).map(
-                (buffer) => readData0(buffer)
-            ),
-            utility.getFixedLengthBuffers(rsg3Rom, 0x3E31BF, 16, 48).map(
-                (buffer) => readData1(buffer)
-            )
-        ]
+        data0: rsg3Rom.getBuffers(0x3E0600, 48, 48).map(
+            readData0
+        ),
+        data1: rsg3Rom.getBuffers(0x3E31BF, 16, 48).map(
+            readData1
+        )
     };
 };
