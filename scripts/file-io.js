@@ -1,6 +1,10 @@
 /*jslint browser*/
 const fileIO = {
-    download(blob, name = "") {
+    /**
+     * @param {Blob} blob
+     * @param {string} [name]
+     */
+    download(blob, name) {
         const anchor = document.createElement("a");
         anchor.href = URL.createObjectURL(blob);
         if (blob.name !== undefined) {
@@ -12,6 +16,11 @@ const fileIO = {
         anchor.click();
         URL.revokeObjectURL(anchor.href);
     },
+    /**
+     * @param {string} [accept]
+     * @param {boolean} [multiple]
+     * @returns {Promise<File|FileList>}
+     */
     open(accept, multiple) {
         return new Promise(function (resolve) {
             const fileInput = document.createElement("input");
@@ -33,6 +42,20 @@ const fileIO = {
                 resolve();
             });
             fileInput.click();
+        });
+    },
+    /**
+     * @param {Blob} blob
+     * @param {string} [encoding]
+     * @returns {string}
+     */
+    readAsText(blob, encoding) {
+        return new Promise(function (resolve) {
+            const reader = new FileReader();
+            reader.addEventListener("loadend", function () {
+                resolve(reader.result);
+            });
+            reader.readAsText(blob, encoding);
         });
     }
 };
