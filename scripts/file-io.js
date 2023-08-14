@@ -7,12 +7,15 @@ const fileIO = {
     download(blob, name) {
         const anchor = document.createElement("a");
         anchor.href = URL.createObjectURL(blob);
-        if (blob.name !== undefined) {
-            anchor.download = blob.name;
-        }
-        if (name !== undefined) {
-            anchor.download = name;
-        }
+        anchor.download = (
+            name === undefined
+            ? (
+                blob.name === undefined
+                ? ""
+                : blob.name
+            )
+            : name
+        );
         anchor.click();
         URL.revokeObjectURL(anchor.href);
     },
