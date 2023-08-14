@@ -15,11 +15,9 @@
           <div class="mb-2">
             <label class="form-label" for="text-textarea">Text</label>
             <div class="btn-group btn-group-sm float-end" role="group">
-              <button class="btn btn-outline-secondary" type="button">Open</button>
-              <button class="btn btn-outline-secondary" type="button">Save</button>
-              <button class="btn btn-outline-secondary" type="button">Paste</button>
-              <button class="btn btn-outline-secondary" type="button">Copy</button>
-              <button class="btn btn-outline-secondary" type="button">Clear</button>
+              <button class="btn btn-outline-secondary file-btn" type="button" @click="openFile($data)">Open</button>
+              <button class="btn btn-outline-secondary file-btn" type="button" @click="saveFile(text)">Save</button>
+              <button class="btn btn-outline-secondary file-btn" type="button" @click="text = &quot;&quot;">Clear</button>
             </div>
           </div>
           <div class="d-flex flex-fill">
@@ -31,18 +29,18 @@
           <div class="mb-2">
             <label class="form-label">Options</label>
             <div class="btn-group btn-group-sm float-end" role="group">
-              <button class="btn btn-outline-secondary" type="button" @click="loadOptions($data)">Load</button>
-              <button class="btn btn-outline-secondary" type="button" @click="saveOptions($data)">Save</button>
-              <button class="btn btn-outline-secondary" type="button" @click="resetOptions($data)">Reset</button>
+              <button class="btn btn-outline-secondary options-btn" type="button" @click="loadOptions($data)">Load</button>
+              <button class="btn btn-outline-secondary options-btn" type="button" @click="saveOptions($data)">Save</button>
+              <button class="btn btn-outline-secondary options-btn" type="button" @click="resetOptions($data)">Reset</button>
             </div>
           </div>
           <div class="input-group input-group-sm mb-2">
-            <label class="input-group-text" for="pattern-prefix-input">Pattern:</label>
+            <label class="input-group-text options-label" for="pattern-prefix-input">Pattern:</label>
             <input class="form-control" type="text" v-model="patternPrefix" placeholder="Prefix">
             <input class="form-control" type="text" v-model="patternSuffix" placeholder="Suffix">
           </div>
           <div class="input-group input-group-sm mb-2">
-            <label class="input-group-text" for="replacement-prefix-input">Replacement:</label>
+            <label class="input-group-text options-label" for="replacement-prefix-input">Replacement:</label>
             <input class="form-control" type="text" v-model="replacementPrefix" placeholder="Prefix">
             <input class="form-control" type="text" v-model="replacementSuffix" placeholder="Suffix">
           </div>
@@ -66,8 +64,14 @@
               </span>
             </div>
           </div>
-          <div class="text-end">
-            <button class="btn btn-outline-secondary" type="button" @click="replace($data)">Replace</button>
+          <div class="btn-group w-100" role="group">
+            <button class="btn btn-outline-secondary w-75" type="button" @click="replace($data)">
+              <i class="bi-code-square"></i>
+              Replace
+            </button>
+            <button class="btn btn-outline-secondary w-25" type="button" title="Revert" @click="text = originalText.pop()" :disabled="originalText.length === 0">
+              <i class="bi-arrow-counterclockwise"></i>
+            </button>
           </div>
         </div>
       </div>

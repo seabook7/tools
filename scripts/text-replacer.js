@@ -9,6 +9,18 @@
     win.addEventListener("resize", resizeHeight);
 }(window));
 function data() {
+    let fileName = "";
+    let optionsName = "options.json";
+    async function openFile(data) {
+        const file = await fileIO.open("text/plain");
+        if (file) {
+            data.text = await file.text();
+            fileName = file.name;
+        }
+    }
+    function saveFile(text) {
+        fileIO.download(new Blob([text]), fileName);
+    }
     function getLineNumbers(text) {
         const count = text.split("\n").length;
         let number = 0;
@@ -65,6 +77,7 @@ function data() {
                     replacementPrefix,
                     replacementSuffix
                 } = JSON.parse(await file.text());
+                optionsName = file.name;
                 data.patternPrefix = getDefaultString(patternPrefix);
                 data.patternSuffix = getDefaultString(patternSuffix);
                 data.replacementPrefix = getDefaultString(replacementPrefix);
@@ -75,7 +88,9 @@ function data() {
                         (item) => createListItem(item)
                     ).filter(
                         (item) => item.pattern.length > 0
-                        && item.replacement.length > 0
+                        || !item.enablePatternPrefixAndSuffix
+                        || item.replacement.length > 0
+                        || !item.enableReplacementPrefixAndSuffix
                     )
                     : []
                 );
@@ -87,13 +102,16 @@ function data() {
     function saveOptions(data) {
         fileIO.download(new Blob([JSON.stringify({
             list: data.list.filter(
-                (item) => item.pattern.length > 0 && item.replacement.length > 0
+                (item) => item.pattern.length > 0
+                || !item.enablePatternPrefixAndSuffix
+                || item.replacement.length > 0
+                || !item.enableReplacementPrefixAndSuffix
             ),
             patternPrefix: data.patternPrefix,
             patternSuffix: data.patternSuffix,
             replacementPrefix: data.replacementPrefix,
             replacementSuffix: data.replacementSuffix
-        }, undefined, 4)]), "options.json");
+        }, undefined, 4)]), optionsName);
     }
     function resetOptions(data) {
         data.patternPrefix = "";
@@ -111,8 +129,9 @@ function data() {
             replacementSuffix,
             text
         } = data;
+        data.originalText.push(text);
         data.text = list.filter(
-            (item) => item.pattern.length > 0 && item.replacement.length > 0
+            (item) => item.pattern.length > 0
         ).reduce(
             (result, item) => result.replaceAll(
                 (
@@ -134,12 +153,15 @@ function data() {
         getLineNumbers,
         list: new Array(8).fill(true).map(createListItem),
         loadOptions,
+        openFile,
+        originalText: [],
         patternPrefix: "",
         patternSuffix: "",
         replace,
         replacementPrefix: "",
         replacementSuffix: "",
         resetOptions,
+        saveFile,
         saveOptions,
         text: ""
     };
