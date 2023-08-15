@@ -9,8 +9,8 @@
     win.addEventListener("resize", resizeHeight);
 }(window));
 function data() {
-    let fileName = "";
-    let optionsName = "options.json";
+    let fileName = "New.txt";
+    let optionsName = "Text Replacer Options.json";
     async function openFile(data) {
         const file = await fileIO.open("text/plain");
         if (file) {
@@ -31,17 +31,17 @@ function data() {
         }
         return lineNumbers;
     }
-    function getDefaultBoolean(boolean) {
+    function getDefaultBoolean(value) {
         return (
-            typeof boolean === "boolean"
-            ? boolean
+            typeof value === "boolean"
+            ? value
             : true
         );
     }
-    function getDefaultString(string) {
+    function getDefaultString(value) {
         return (
-            typeof string === "string"
-            ? string
+            typeof value === "string"
+            ? value
             : ""
         );
     }
@@ -129,24 +129,32 @@ function data() {
             replacementSuffix,
             text
         } = data;
-        data.originalText.push(text);
-        data.text = list.filter(
-            (item) => item.pattern.length > 0
-        ).reduce(
-            (result, item) => result.replaceAll(
-                (
-                    item.enablePatternPrefixAndSuffix
-                    ? patternPrefix + item.pattern + patternSuffix
-                    : item.pattern
-                ),
-                (
-                    item.enableReplacementPrefixAndSuffix
-                    ? replacementPrefix + item.replacement + replacementSuffix
-                    : item.replacement
-                )
-            ),
-            text
-        );
+        let textIsChanged = false;
+        data.text = list.filter(function ({pattern}) {
+            return pattern.length > 0;
+        }).reduce(function (result, {
+            enablePatternPrefixAndSuffix,
+            enableReplacementPrefixAndSuffix,
+            pattern,
+            replacement
+        }) {
+            if (enablePatternPrefixAndSuffix) {
+                pattern = patternPrefix + pattern + patternSuffix;
+            }
+            if (enableReplacementPrefixAndSuffix) {
+                replacement = replacementPrefix
+                + replacement
+                + replacementSuffix;
+            }
+            if (result.includes(pattern)) {
+                textIsChanged = true;
+                return result.replaceAll(pattern, replacement);
+            }
+            return result;
+        }, text);
+        if (textIsChanged) {
+            data.originalText.push(text);
+        }
     }
     return {
         createListItem,
