@@ -1,0 +1,31 @@
+textarea.line-numbers {
+  inline-size: 4rem;
+  block-size: 100%;
+  white-space: pre;
+  resize: none;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+textarea.line-numbers-text {
+  block-size: 100%;
+  white-space: pre;
+  resize: none;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+button.file-btn,
+button.options-btn {
+  inline-size: 4rem;
+}
+label.options-label {
+  inline-size: 6.75rem;
+}
+div.multi-line-input-group > div.input-group:not(:last-child) > * {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+div.multi-line-input-group > div.input-group:not(:first-child) > * {
+  border-block-start-width: 0;
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}

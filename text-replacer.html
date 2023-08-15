@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Text Replacer</title>
+    <link href="bootstrap-5.3.1-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bootstrap-icons-1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="styles/text-replacer.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container h-100 py-3" v-scope="">
+      <div class="row h-100">
+        <div class="col-12 col-xl-9 d-flex flex-fill flex-column mb-3">
+          <div class="mb-2">
+            <label class="form-label" for="text-textarea">Text</label>
+            <div class="btn-group btn-group-sm float-end" role="group">
+              <button class="btn btn-outline-secondary file-btn" type="button" @click="openFile($data)">Open</button>
+              <button class="btn btn-outline-secondary file-btn" type="button" @click="saveFile(text)">Save</button>
+              <button class="btn btn-outline-secondary file-btn" type="button" @click="text = &quot;&quot;">Clear</button>
+            </div>
+          </div>
+          <div class="d-flex flex-fill">
+            <textarea class="form-control overflow-hidden border-end-0 text-end text-secondary line-numbers" v-model="getLineNumbers(text)" disabled></textarea>
+            <textarea class="form-control border-start-0 line-numbers-text" v-model="text" spellcheck="false"></textarea>
+          </div>
+        </div>
+        <div class="col-12 col-xl-3 mb-3">
+          <div class="mb-2">
+            <label class="form-label">Options</label>
+            <div class="btn-group btn-group-sm float-end" role="group">
+              <button class="btn btn-outline-secondary options-btn" type="button" @click="loadOptions($data)">Load</button>
+              <button class="btn btn-outline-secondary options-btn" type="button" @click="saveOptions($data)">Save</button>
+              <button class="btn btn-outline-secondary options-btn" type="button" @click="resetOptions($data)">Reset</button>
+            </div>
+          </div>
+          <div class="input-group input-group-sm mb-2">
+            <label class="input-group-text options-label" for="pattern-prefix-input">Pattern:</label>
+            <input class="form-control" type="text" v-model="patternPrefix" placeholder="Prefix">
+            <input class="form-control" type="text" v-model="patternSuffix" placeholder="Suffix">
+          </div>
+          <div class="input-group input-group-sm mb-2">
+            <label class="input-group-text options-label" for="replacement-prefix-input">Replacement:</label>
+            <input class="form-control" type="text" v-model="replacementPrefix" placeholder="Prefix">
+            <input class="form-control" type="text" v-model="replacementSuffix" placeholder="Suffix">
+          </div>
+          <div class="mb-2 multi-line-input-group">
+            <div class="input-group input-group-sm" v-for="(item, index) in list" :key="index">
+              <input class="form-control " type="text" placeholder="Pattern" v-model="item.pattern">
+              <div class="input-group-text">
+                <input class="form-check-input mt-0" type="checkbox" title="Enable pattern prefix and suffix" v-model="item.enablePatternPrefixAndSuffix">
+              </div>
+              <input class="form-control" type="text" placeholder="Replacement" v-model="item.replacement">
+              <div class="input-group-text">
+                <input class="form-check-input mt-0" type="checkbox" title="Enable replacement prefix and suffix" v-model="item.enableReplacementPrefixAndSuffix">
+              </div>
+              <span class="input-group-text" role="button" @click="list.splice(index, 1)">
+                <i class="bi-x-square text-danger"></i>
+              </span>
+            </div>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text flex-fill justify-content-center" role="button" @click="list.push(createListItem())">
+                <i class="bi-plus-square text-primary"></i>
+              </span>
+            </div>
+          </div>
+          <div class="btn-group w-100" role="group">
+            <button class="btn btn-outline-secondary w-75" type="button" @click="replace($data)">
+              <i class="bi-code-square"></i>
+              Replace
+            </button>
+            <button class="btn btn-outline-secondary w-25" type="button" title="Revert" @click="text = originalText.pop()" :disabled="originalText.length === 0">
+              <i class="bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="bootstrap-5.3.1-dist/js/bootstrap.min.js"></script>
+    <script src="scripts/file-io.js"></script>
+    <script src="petite-vue-0.4.1-dist/petite-vue.iife.js"></script>
+    <script src="scripts/text-replacer.js"></script>
+  </body>
+</html>
