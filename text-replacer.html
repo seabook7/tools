@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-US">
+<html class="h-100" lang="en-US">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,10 +9,10 @@
     <link href="styles/text-replacer.css" rel="stylesheet">
     <script src="petite-vue-0.4.1-dist/petite-vue.iife.js" defer init></script>
   </head>
-  <body>
+  <body class="h-100">
     <div class="container h-100 py-3" v-scope="data()">
       <div class="row h-100">
-        <div class="col-12 col-xl-9 d-flex flex-fill flex-column mb-3">
+        <div class="col-12 col-xl-9 d-flex flex-fill flex-column mb-3 mb-xl-0">
           <div class="mb-2">
             <label class="form-label" for="text-textarea">Text</label>
             <div class="btn-group btn-group-sm float-end" role="group">
@@ -22,8 +22,8 @@
             </div>
           </div>
           <div class="d-flex flex-fill">
-            <textarea class="form-control overflow-hidden border-end-0 text-end text-secondary line-numbers" v-model="getLineNumbers(text)" disabled></textarea>
-            <textarea class="form-control border-start-0 line-numbers-text" v-model="text" spellcheck="false"></textarea>
+            <textarea class="form-control overflow-hidden border-end-0 text-end text-secondary line-numbers" v-model="getLineNumbers(text)" placeholder="Line Numbers" disabled></textarea>
+            <textarea class="form-control border-start-0 line-numbers-text" id="text-textarea" v-model="text" spellcheck="false"></textarea>
           </div>
         </div>
         <div class="col-12 col-xl-3 mb-3">
@@ -36,12 +36,12 @@
             </div>
           </div>
           <div class="input-group input-group-sm mb-2">
-            <label class="input-group-text options-label" for="pattern-prefix-input">Pattern:</label>
+            <label class="input-group-text options-label">Pattern:</label>
             <input class="form-control" type="text" v-model="patternPrefix" placeholder="Prefix">
             <input class="form-control" type="text" v-model="patternSuffix" placeholder="Suffix">
           </div>
           <div class="input-group input-group-sm mb-2">
-            <label class="input-group-text options-label" for="replacement-prefix-input">Replacement:</label>
+            <label class="input-group-text options-label">Replacement:</label>
             <input class="form-control" type="text" v-model="replacementPrefix" placeholder="Prefix">
             <input class="form-control" type="text" v-model="replacementSuffix" placeholder="Suffix">
           </div>
@@ -55,12 +55,12 @@
               <div class="input-group-text">
                 <input class="form-check-input mt-0" type="checkbox" title="Enable replacement prefix and suffix" v-model="item.enableReplacementPrefixAndSuffix">
               </div>
-              <span class="input-group-text" role="button" @click="list.splice(index, 1)">
+              <span class="input-group-text" title="Remove" role="button" @click="list.splice(index, 1)">
                 <i class="bi-x-square text-danger"></i>
               </span>
             </div>
             <div class="input-group input-group-sm">
-              <span class="input-group-text flex-fill justify-content-center" role="button" @click="list.push(createListItem())">
+              <span class="input-group-text flex-fill justify-content-center" title="Add" role="button" @click="list.push(createListItem())">
                 <i class="bi-plus-square text-primary"></i>
               </span>
             </div>

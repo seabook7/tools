@@ -1,13 +1,5 @@
 /*jslint browser*/
 /*global fileIO*/
-// set height of body to 100%
-(function (win) {
-    function resizeHeight() {
-        document.body.style.height = win.innerHeight + "px";
-    }
-    resizeHeight();
-    win.addEventListener("resize", resizeHeight);
-}(window));
 function data() {
     let fileName = "New.txt";
     let optionsName = "Text Replacer Options.json";
