@@ -7,9 +7,10 @@
     <link href="bootstrap-5.3.1-dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="bootstrap-icons-1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="styles/text-replacer.css" rel="stylesheet">
+    <script src="petite-vue-0.4.1-dist/petite-vue.iife.js" defer init></script>
   </head>
   <body>
-    <div class="container h-100 py-3" v-scope="">
+    <div class="container h-100 py-3" v-scope="data()">
       <div class="row h-100">
         <div class="col-12 col-xl-9 d-flex flex-fill flex-column mb-3">
           <div class="mb-2">
@@ -78,7 +79,6 @@
     </div>
     <script src="bootstrap-5.3.1-dist/js/bootstrap.min.js"></script>
     <script src="scripts/file-io.js"></script>
-    <script src="petite-vue-0.4.1-dist/petite-vue.iife.js"></script>
     <script src="scripts/text-replacer.js"></script>
   </body>
 </html>

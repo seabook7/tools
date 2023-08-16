@@ -1,5 +1,5 @@
 /*jslint browser*/
-/*global fileIO, PetiteVue*/
+/*global fileIO*/
 // set height of body to 100%
 (function (win) {
     function resizeHeight() {
@@ -174,4 +174,3 @@ function data() {
         text: ""
     };
 }
-PetiteVue.createApp(data()).mount();
