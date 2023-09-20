@@ -24,25 +24,29 @@ const editableTree = (function () {
      * @param {HTMLElement} elementToMove
      */
     function draggable(elementToDrag, elementToMove = elementToDrag) {
-        let isMousedown = false;
         let offsetX;
         let offsetY;
+        function move(event) {
+            elementToMove.style.left = event.clientX - offsetX + "px";
+            elementToMove.style.top = event.clientY - offsetY + "px";
+        }
+        function prevent(event) {
+            event.preventDefault();
+        }
         elementToDrag.addEventListener("mousedown", function (event) {
             if (event.button === 0) {
                 const {x, y} = elementToMove.getBoundingClientRect();
-                isMousedown = true;
-                offsetX = event.clientX - Math.floor(x);
-                offsetY = event.clientY - Math.floor(y);
+                offsetX = event.clientX - x;
+                offsetY = event.clientY - y;
+                window.addEventListener("mousemove", move);
+                elementToDrag.addEventListener("contextmenu", prevent);
             }
         });
-        document.body.addEventListener("mousemove", function (event) {
-            if (isMousedown) {
-                elementToMove.style.left = event.clientX - offsetX + "px";
-                elementToMove.style.top = event.clientY - offsetY + "px";
+        window.addEventListener("mouseup", function (event) {
+            if (event.button === 0) {
+                window.removeEventListener("mousemove", move);
+                elementToDrag.removeEventListener("contextmenu", prevent);
             }
-        });
-        window.addEventListener("mouseup", function () {
-            isMousedown = false;
         });
     }
     function createEditingCard() {
