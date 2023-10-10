@@ -27,25 +27,22 @@ const editableTree = (function () {
         let offsetX;
         let offsetY;
         function move(event) {
-            elementToMove.style.left = event.clientX - offsetX + "px";
-            elementToMove.style.top = event.clientY - offsetY + "px";
+            elementToMove.style.left = event.clientX + offsetX + "px";
+            elementToMove.style.top = event.clientY + offsetY + "px";
         }
-        function prevent(event) {
+        elementToMove.addEventListener("contextmenu", function (event) {
             event.preventDefault();
-        }
+        });
         elementToDrag.addEventListener("mousedown", function (event) {
             if (event.button === 0) {
-                const {x, y} = elementToMove.getBoundingClientRect();
-                offsetX = event.clientX - x;
-                offsetY = event.clientY - y;
+                offsetX = parseInt(elementToMove.style.left) - event.clientX;
+                offsetY = parseInt(elementToMove.style.top) - event.clientY;
                 window.addEventListener("mousemove", move);
-                elementToDrag.addEventListener("contextmenu", prevent);
             }
         });
         window.addEventListener("mouseup", function (event) {
             if (event.button === 0) {
                 window.removeEventListener("mousemove", move);
-                elementToDrag.removeEventListener("contextmenu", prevent);
             }
         });
     }
