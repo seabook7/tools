@@ -2,11 +2,13 @@
 /*global rsg3Encoding*/
 function rsg3Text(rsg3Rom) {
     return {
-        /* unknown format
-        dialogue: rsg3Encoding.decode(
-            rsg3Rom.buffer.subarray(0x3C0000, 0x3D0000)
-        ),
+        /* unknown table
+        table: rsg3Rom.getTable(0x3C0000, 0x3C0800),
         */
+        // not fully parsed
+        dialogue: rsg3Encoding.decode(
+            rsg3Rom.buffer.subarray(0x3C0800, 0x3D0000)
+        ).split("\f"),
         formation: rsg3Rom.getBuffers(0x3D0000, 10, 64).map(
             rsg3Encoding.decode
         ),
