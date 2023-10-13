@@ -1,11 +1,11 @@
 /*jslint long*/
 const rsg3Encoding = (function () {
-    function getHex(code) {
+    function toHex(code) {
         return code.toString(16).toUpperCase().padStart(2, "0");
     }
-    const codeTable = [
+    const charCodeTable = [
         /* 0x20 */
-        "　", "あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ",
+        "", "あ", "い", "う", "え", "お", "か", "き", "く", "け", "こ", "さ", "し", "す", "せ", "そ",
         "た", "ち", "つ", "て", "と", "な", "に", "ぬ", "ね", "の", "は", "ひ", "ふ", "ほ", "ま", "み",
         "む", "め", "も", "や", "ゆ", "よ", "ら", "り", "る", "れ", "ろ", "わ", "を", "ん", "ゃ", "ゅ",
         "ょ", "っ", "ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ", "サ", "シ", "ス", "セ",
@@ -73,68 +73,58 @@ const rsg3Encoding = (function () {
         "糸", "丘", "誓", "案", "敬", "慮", "縁", "伏", "密", "兼", "孫", "景", "呪", "倍", "阻", "占",
         "伐", "幕", "清", "仁", "覆", "嬢", "諸", "亜", "居", "酸", "津", "智", "鎮", "略", "根", "汗"
     ];
+    const charIndexTable = charCodeTable.reduce(function (table, char, code) {
+        table[char] = code;
+        return table;
+    }, {});
     return {
         decode(buffer) {
-            let string = "";
+            let text = "";
             let offset = 0;
             const length = buffer.length;
             while (offset < length) {
                 const code = buffer[offset];
-                // single byte
-                if (code >= 0x50) {
-                    string += codeTable[code - 0x50];
-                } else {
-                    const next = offset + 1;
-                    // ???
-                    if (code === 0x17 && next < length) {
-                        string += "[17 " + getHex(buffer[next]) + "]";
-                        offset = next;
-                    // double byte
-                    } else if (code >= 0x20 && code <= 0x23 && next < length) {
-                        string += codeTable[
-                            (code - 0x20) * 0x100 + buffer[next]
-                        ];
-                        offset = next;
-                    // new line
-                    } else if (code === 0x24) {
-                        string += "\n";
-                    // wait ?
-                    } else if (code === 0x2B && next < length) {
-                        string += "[2B " + getHex(buffer[next]) + "]";
-                        offset = next;
-                    // page feed ?
-                    } else if (code === 0x2C) {
-                        string += "\f";
-                    // submap
-                    } else if (code === 0x3B && next < length) {
-                        string += "${submap[" + buffer[next] + "]}";
-                        offset = next;
-                    // character
-                    } else if (code === 0x4A && next < length) {
-                        string += "${character[" + buffer[next] + "]}";
-                        offset = next;
-                    } else {
-                        string += "[" + getHex(code) + "]";
-                    }
+                const next = offset + 1;
+                if (code >= 0x50) { // single byte
+                    text += charCodeTable[code - 0x50];
+                } else if (code === 0x4A && next < length) { // character
+                    text += "[character " + buffer[next] + "]";
+                    offset = next;
+                } else if (code === 0x3B && next < length) { // submap
+                    text += "[submap " + buffer[next] + "]";
+                    offset = next;
+                } else if (code === 0x2C) { // page feed ?
+                    text += "\f";
+                } else if (code === 0x2B && next < length) { // wait ?
+                    text += "[wait " + buffer[next] + "]";
+                    offset = next;
+                } else if (code === 0x24) { // new line
+                    text += "\n";
+                } else if (code >= 0x20 && code < 0x24 && next < length) { // double byte
+                    text += charCodeTable[
+                        (code - 0x20) * 0x100 + buffer[next]
+                    ];
+                    offset = next;
+                } else if (code === 0x17 && next < length) { // unknown control character
+                    text += "[17 " + toHex(buffer[next]) + "]";
+                    offset = next;
+                } else { // unknown
+                    text += "[" + toHex(code) + "]";
                 }
                 offset += 1;
             }
-            return string.replace(/　+$/, "");
+            return text;
         },
-        encode(string) {
-            const length = string.length;
+        encode(text) {
+            const length = text.length;
             const buffer = new Uint8Array(length * 2);
-            let i = 0;
+            let index = 0;
             let offset = 0;
-            while (i < length) {
-                const code = codeTable.indexOf(string.charAt(i));
+            while (index < length) {
+                const code = charIndexTable[text[index]];
                 if (code > -1) {
                     if (code < 0xB0) {
-                        buffer.set([(
-                            code === 0
-                            ? 0xE6
-                            : code + 0x50
-                        )], offset);
+                        buffer.set([code + 0x50], offset);
                         offset += 1;
                     } else {
                         const code1 = code % 0x100;
@@ -143,7 +133,7 @@ const rsg3Encoding = (function () {
                         offset += 2;
                     }
                 }
-                i += 1;
+                index += 1;
             }
             return buffer.subarray(0, offset);
         }
