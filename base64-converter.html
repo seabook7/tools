@@ -1,0 +1,78 @@
+<!doctype html>
+<html class="h-100" lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="image/svg+xml" href="bootstrap-icons-1.11.1/file-earmark-binary.svg" rel="icon">
+    <title>Base64 Converter</title>
+    <link href="bootstrap-5.3.2-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bootstrap-icons-1.11.1/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="styles/base64-converter.css" rel="stylesheet">
+  </head>
+  <body class="h-100">
+    <div class="container d-flex h-100 flex-column py-3">
+      <div class="row">
+        <div class="col-12 col-md-6 col-xl-3 mb-3">
+          <span class="form-text me-3">Mode:</span>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" id="file-radio" name="mode" type="radio" checked>
+            <label class="form-check-label" for="file-radio">File</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" id="text-radio" name="mode" type="radio">
+            <label class="form-check-label" for="text-radio">Text</label>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3 mb-3" id="file-input-group">
+          <div class="input-group">
+            <input class="form-control" id="file-name-input" type="text" placeholder="File name">
+            <button class="btn btn-outline-secondary" id="encode-file-button" type="button">
+              Encode
+            </button>
+            <button class="btn btn-outline-secondary" id="decode-file-button" type="button">
+              Decode
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="row" id="text-label" hidden="">
+        <div class="col-12">
+          <label class="form-label" for="text-textarea">Text:</label>
+        </div>
+      </div>
+      <div class="row" id="text-area" hidden="">
+        <div class="col-12 mb-3">
+          <textarea class="form-control font-monospace resize-none" id="text-textarea" rows="4" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="row" id="text-buttons" hidden="">
+        <div class="col-12 mb-3">
+          <button class="btn btn-outline-secondary" id="encode-text-button" type="button">
+            <i class="bi-arrow-down"></i>
+            Encode
+          </button>
+          <button class="btn btn-outline-secondary" id="decode-text-button" type="button">
+            <i class="bi-arrow-up"></i>
+            Decode
+          </button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <label class="form-label" for="base64-textarea">Base64:</label>
+          <div class="form-check float-end">
+            <input class="form-check-input" id="line-breaks-checkbox" type="checkbox" checked>
+            <label class="form-check-label" for="line-breaks-checkbox">Line breaks</label>
+          </div>
+        </div>
+      </div>
+      <div class="flex-fill">
+        <textarea class="form-control font-monospace h-100 resize-none" id="base64-textarea" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <script src="bootstrap-5.3.2-dist/js/bootstrap.min.js"></script>
+    <script src="scripts/file-io.js"></script>
+    <script src="scripts/base64-encoding.js"></script>
+    <script src="scripts/base64-converter.js"></script>
+  </body>
+</html>
