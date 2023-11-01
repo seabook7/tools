@@ -292,8 +292,9 @@
         const closeButton = document.createElement("button");
         messageDiv.append(message);
         closeButton.className = "btn-close";
-        closeButton.dataset.bsDismiss = "alert";
         closeButton.type = "button";
+        closeButton.title = "Close";
+        closeButton.dataset.bsDismiss = "alert";
         wrapper.className = "alert alert-" + type + " alert-dismissible me-4";
         wrapper.append(messageDiv, closeButton);
         alertPlaceholder.append(wrapper);

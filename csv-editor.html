@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link type="image/svg+xml" href="bootstrap-icons-1.10.5/filetype-csv.svg" rel="icon">
+    <link type="image/svg+xml" href="bootstrap-icons-1.11.1/filetype-csv.svg" rel="icon">
     <title>CSV Editor</title>
-    <link href="bootstrap-5.3.1-dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="bootstrap-icons-1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="bootstrap-5.3.2-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bootstrap-icons-1.11.1/bootstrap-icons.min.css" rel="stylesheet">
     <link href="styles/editable-table.css" rel="stylesheet">
     <link href="styles/csv-editor.css" rel="stylesheet">
   </head>
@@ -28,7 +28,7 @@
         </div>
         <div class="col-12 col-md-6 col-xl-3 mb-3">
           <div class="input-group">
-            <label class="input-group-text" for="delimiter-select">Delimiter:</label>
+            <label class="input-group-text px-1" for="delimiter-select">Delimiter:</label>
             <select class="form-select" id="delimiter-select">
             </select>
           </div>
@@ -40,15 +40,11 @@
             </select>
           </div>
         </div>
-        <div class="col-12 col-md-6 col-xl-3 d-flex justify-content-between mb-3">
+        <div class="col-12 col-md-6 col-xl-3 mb-3">
           <button class="btn btn-outline-secondary" id="save-button" type="button">
             <i class="bi-save"></i>
             Save
           </button>
-          <a class="btn btn-outline-secondary" href="index.html" role="button">
-            <i class="bi-x-square"></i>
-            Close
-          </a>
         </div>
       </div>
       <div class="flex-fill">
@@ -79,7 +75,7 @@
         </div>
       </div>
     </div>
-    <script src="bootstrap-5.3.1-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="bootstrap-5.3.2-dist/js/bootstrap.bundle.min.js"></script>
     <script src="scripts/file-io.js"></script>
     <script src="scripts/editable-table.js"></script>
     <script src="scripts/csv-editor.js"></script>
