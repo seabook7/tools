@@ -4,7 +4,9 @@ const editableTable = (function () {
         "table table-success table-striped table-bordered w-auto"
     );
     const headClass = "table-light";
-    const headCellClass = "position-static min-inline-size-3rem p-0";
+    const headCellClass = "min-inline-size-3rem p-0";
+    const dropdownClass = "dropdown";
+    const dropendClass = "dropend";
     const insertCellClass = "min-inline-size-3rem py-1 text-center";
     const fieldCellClass = "min-inline-size-3rem p-1 white-space-pre";
     const dropdownButtonClass = (
@@ -12,23 +14,23 @@ const editableTable = (function () {
     );
     const dropdownMenuClass = "dropdown-menu glass-background shadow";
     const dropdownItemClass = "dropdown-item";
-    const dropendClass = "dropend";
     const table = document.createElement("table");
     const head = document.createElement("thead");
     const headRow = document.createElement("tr");
     const headCell = document.createElement("th");
     const body = document.createElement("tbody");
     function getColumnName(number) {
-        if (number < 1) {
-            return "";
+        const codes = [];
+        let code;
+        while (number >= 27) {
+            code = (number - 1) % 26 + 1;
+            codes.unshift(code + 64);
+            number = (number - code) / 26;
         }
-        if (number < 27) {
-            return String.fromCharCode(number + 64);
+        if (number >= 1) {
+            codes.unshift(number + 64);
         }
-        if (number % 26 < 1) {
-            return getColumnName(number / 26 - 1) + getColumnName(26);
-        }
-        return getColumnName(number / 26) + getColumnName(number % 26);
+        return String.fromCharCode(...codes);
     }
     function getField(data, x, y) {
         if (Array.isArray(data)) {
@@ -41,7 +43,7 @@ const editableTable = (function () {
     }
     function createColumnHeadCell(dropdownButton, dropdownMenu) {
         const cell = document.createElement("th");
-        cell.className = headCellClass;
+        cell.className = [headCellClass, dropdownClass].join(" ");
         cell.scope = "col";
         cell.append(dropdownButton, dropdownMenu);
         return cell;
