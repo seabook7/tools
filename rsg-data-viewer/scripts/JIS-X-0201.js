@@ -19,8 +19,11 @@ const JISX0201 = {
             ? code + 0xFEC0
             : code
         );
-        const unicodes = codes.filter(filter).map(toUnicode);
-        return String.fromCharCode(...unicodes);
+        if (Array.isArray(codes)) {
+            const unicodes = codes.filter(filter).map(toUnicode);
+            return String.fromCharCode(...unicodes);
+        }
+        return "";
     },
     /**
      * @param {string} string
@@ -44,7 +47,10 @@ const JISX0201 = {
             ? code - 0xFEC0
             : code
         );
-        const unicodes = Array.prototype.map.call(string, getCharCode);
-        return unicodes.filter(filter).map(toJISX0201);
+        if (typeof string === "string") {
+            const unicodes = Array.prototype.map.call(string, getCharCode);
+            return unicodes.filter(filter).map(toJISX0201);
+        }
+        return [];
     }
 };
