@@ -1,20 +1,22 @@
 /*jslint browser*/
-/*global base64Encoding, fileIO*/
-(function (doc) {
-    const fileRadio = doc.querySelector("#file-radio");
-    const textRadio = doc.querySelector("#text-radio");
-    const fileInputGroup = doc.querySelector("#file-input-group");
-    const fileNameInput = doc.querySelector("#file-name-input");
-    const encodeFileButton = doc.querySelector("#encode-file-button");
-    const decodeFileButton = doc.querySelector("#decode-file-button");
-    const textLabel = doc.querySelector("#text-label");
-    const textArea = doc.querySelector("#text-area");
-    const textTextarea = doc.querySelector("#text-textarea");
-    const textButtons = doc.querySelector("#text-buttons");
-    const encodeTextButton = doc.querySelector("#encode-text-button");
-    const decodeTextButton = doc.querySelector("#decode-text-button");
-    const base64Textarea = doc.querySelector("#base64-textarea");
-    const lineBreaksCheckbox = doc.querySelector("#line-breaks-checkbox");
+/*global Base64DataEncoding, fileIO*/
+(function (query) {
+    const fileRadio = query("#file-radio");
+    const textRadio = query("#text-radio");
+    const fileInputGroup = query("#file-input-group");
+    const fileNameInput = query("#file-name-input");
+    const openButton = query("#open-button");
+    const saveButton = query("#save-button");
+    const textLabel = query("#text-label");
+    const textArea = query("#text-area");
+    const urlCheckbox = query("#url-checkbox");
+    const textTextarea = query("#text-textarea");
+    const textButtons = query("#text-buttons");
+    const toButton = query("#to-button");
+    const fromButton = query("#from-button");
+    const saveBase64Button = query("#save-base64-button");
+    const base64Textarea = query("#base64-textarea");
+    const lineBreaksCheckbox = query("#line-breaks-checkbox");
     fileRadio.addEventListener("change", function () {
         fileInputGroup.hidden = false;
         textLabel.hidden = true;
@@ -27,41 +29,63 @@
         textArea.hidden = false;
         textButtons.hidden = false;
     });
-    encodeFileButton.addEventListener("click", async function () {
+    openButton.addEventListener("click", async function () {
         const file = await fileIO.open();
         if (file !== undefined) {
-            const base64 = base64Encoding.encode(await file.arrayBuffer());
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const base64String = Base64DataEncoding.toBase64String(uint8Array);
             base64Textarea.value = (
                 lineBreaksCheckbox.checked
-                ? base64Encoding.insertLineBreaks(base64)
-                : base64
+                ? Base64DataEncoding.insertLineBreaks(base64String)
+                : base64String
             );
             fileNameInput.value = file.name;
         }
     });
-    decodeFileButton.addEventListener("click", function () {
-        const blob = new Blob([base64Encoding.decode(base64Textarea.value)]);
+    saveButton.addEventListener("click", function () {
+        const data = Base64DataEncoding.fromBase64String(base64Textarea.value);
+        const uint8Array = new Uint8Array(data);
+        const blob = new Blob([uint8Array]);
         fileIO.download(blob, fileNameInput.value);
     });
     lineBreaksCheckbox.addEventListener("change", function () {
-        const base64 = base64Textarea.value.replaceAll("\n", "");
+        const base64String = base64Textarea.value.replaceAll("\n", "");
         base64Textarea.value = (
             lineBreaksCheckbox.checked
-            ? base64Encoding.insertLineBreaks(base64)
-            : base64
+            ? Base64DataEncoding.insertLineBreaks(base64String)
+            : base64String
         );
     });
-    encodeTextButton.addEventListener("click", async function () {
+    toButton.addEventListener("click", async function () {
         const blob = new Blob([textTextarea.value]);
-        const base64 = base64Encoding.encode(await blob.arrayBuffer());
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const base64String = (
+            urlCheckbox.checked
+            ? Base64DataEncoding.toBase64URLString(uint8Array)
+            : Base64DataEncoding.toBase64String(uint8Array)
+        );
         base64Textarea.value = (
             lineBreaksCheckbox.checked
-            ? base64Encoding.insertLineBreaks(base64)
-            : base64
+            ? Base64DataEncoding.insertLineBreaks(base64String)
+            : base64String
         );
     });
-    decodeTextButton.addEventListener("click", async function () {
-        const blob = new Blob([base64Encoding.decode(base64Textarea.value)]);
+    fromButton.addEventListener("click", async function () {
+        const base64String = base64Textarea.value;
+        const data = (
+            urlCheckbox.checked
+            ? Base64DataEncoding.fromBase64String(base64String)
+            : Base64DataEncoding.fromBase64URLString(base64String)
+        );
+        const uint8Array = new Uint8Array(data);
+        const blob = new Blob([uint8Array]);
         textTextarea.value = await blob.text();
     });
-}(document));
+    saveBase64Button.addEventListener("click", function () {
+        const base64String = base64Textarea.value;
+        const blob = new Blob([base64String]);
+        fileIO.download(blob, "base64.txt");
+    });
+}((selectors) => document.querySelector(selectors)));
