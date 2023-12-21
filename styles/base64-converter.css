@@ -1,1 +1,5 @@
-textarea.resize-none { resize: none;}
+#open-button,
+#save-button { width: 4.5rem; }
+#to-button,
+#from-button { width: 6rem; }
+textarea.resize-none { resize: none; }
