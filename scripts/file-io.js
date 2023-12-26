@@ -51,15 +51,15 @@ const FileIO = (function (create) {
      */
     const openFiles = (accept) => open(accept, true);
     /**
-     * @param {File} file
+     * @param {Blob} blob
      * @returns {Promise<Uint8Array>}
      */
-    async function readBytes(file) {
-        const arrayBuffer = await file.arrayBuffer();
+    async function readBytes(blob) {
+        const arrayBuffer = await blob.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
         return uint8Array;
     }
-    function readAsText(file, encoding) {
+    function readAsText(blob, encoding) {
         const reader = new FileReader();
         function executor(resolve, reject) {
             const resolveResult = () => resolve(reader.result);
@@ -68,18 +68,18 @@ const FileIO = (function (create) {
             reader.addEventListener("error", rejectError);
         }
         const promise = new Promise(executor);
-        reader.readAsText(file, encoding);
+        reader.readAsText(blob, encoding);
         return promise;
     }
     /**
-     * @param {File} file
+     * @param {Blob} blob
      * @param {string} [encoding]
      * @returns {Promise<string>}
      */
-    const readText = (file, encoding) => (
+    const readText = (blob, encoding) => (
         encoding === undefined
-        ? file.text()
-        : readAsText(file, encoding)
+        ? blob.text()
+        : readAsText(blob, encoding)
     );
     return {download, openFile, openFiles, readBytes, readText};
 }((tagName) => document.createElement(tagName)));
