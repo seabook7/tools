@@ -35,10 +35,9 @@ const FileIO = (function (create) {
                 : resolveFile
             ));
             fileInput.addEventListener("cancel", cancel);
+            fileInput.click();
         }
-        const promise = new Promise(executor);
-        fileInput.click();
-        return promise;
+        return new Promise(executor);
     }
     /**
      * @param {string} [accept]
@@ -66,10 +65,9 @@ const FileIO = (function (create) {
             const rejectError = () => reject(reader.error);
             reader.addEventListener("load", resolveResult);
             reader.addEventListener("error", rejectError);
+            reader.readAsText(blob, encoding);
         }
-        const promise = new Promise(executor);
-        reader.readAsText(blob, encoding);
-        return promise;
+        return new Promise(executor);
     }
     /**
      * @param {Blob} blob
