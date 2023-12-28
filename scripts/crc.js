@@ -1,8 +1,8 @@
 /*jslint bitwise*/
 const CRC = (function () {
     const table = (function () {
-        const array256 = new Uint32Array(256).fill(0);
-        const array8 = new Array(8).fill(0);
+        const array256 = new Uint32Array(256);
+        const array8 = new Uint8Array(8);
         const kPoly = 0xEDB88320;
         const reducer = (result) => (
             (result & 1) === 1
