@@ -24,7 +24,7 @@ const CRC = (function () {
         ? value + 0x100000000
         : value
     );
-    const getDigest = (value) => value ^ 0xFFFFFFFF;
+    const getDigest = (value) => ~value;
     const updateByte = (value, b) => table[value & 0xFF ^ b] ^ (value >>> 8);
     const update = (data) => data.reduce(updateByte, 0xFFFFFFFF);
     /**
@@ -35,7 +35,7 @@ const CRC = (function () {
     /**
      * @param {number} digest
      * @param {Uint8Array|Uint8ClampedArray|number[]} data
-     * @returns {Promise<boolean>}
+     * @returns {boolean}
      */
     const verifyDigest = (digest, data) => calculateDigest(data) === digest;
     return {calculateDigest, verifyDigest};
