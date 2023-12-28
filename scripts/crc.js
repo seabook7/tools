@@ -1,4 +1,4 @@
-/*jslint bitwise, browser, this*/
+/*jslint bitwise*/
 const CRC = (function () {
     const table = new Uint32Array(256);
     (function () {
