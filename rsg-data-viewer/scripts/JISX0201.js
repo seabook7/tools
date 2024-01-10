@@ -1,8 +1,8 @@
 // reference:
 // https://www.unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/JIS/JIS0201.TXT
 const JISX0201 = (function () {
-    const reducer = (acc, fn) => fn(acc);
-    const reduce = (...args) => args.reduce(reducer);
+    const call = (acc, fn) => fn(acc);
+    const pipe = (...args) => args.reduce(call);
     const toArray = (codes) => (
         Array.isArray(codes)
         ? codes
@@ -28,7 +28,7 @@ const JISX0201 = (function () {
      * @param {number[]} codes
      * @returns {string}
      */
-    const decode = (codes) => reduce(
+    const decode = (codes) => pipe(
         codes,
         toArray,
         filterDecodable,
@@ -65,7 +65,7 @@ const JISX0201 = (function () {
      * @param {string} string
      * @returns {number[]}
      */
-    const encode = (string) => reduce(
+    const encode = (string) => pipe(
         string,
         toString,
         mapToCharCode,
