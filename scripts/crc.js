@@ -1,79 +1,49 @@
-// reference:
-// https://www.unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/JIS/JIS0201.TXT
-const JISX0201 = (function () {
+/*jslint bitwise*/
+const CRC = (function () {
     const call = (acc, fn) => fn(acc);
     const pipe = (...args) => args.reduce(call);
-    const toArray = (codes) => (
-        Array.isArray(codes)
-        ? codes
-        : Array.from(codes)
+    function mapToTable(emptyTable) {
+        const array8 = new Array(8).fill(0);
+        const reducer = (result) => (
+            (result & 1) === 1
+            ? result >>> 1 ^ 0xEDB88320
+            : result >>> 1
+        );
+        const toResult = (ignore, index) => array8.reduce(reducer, index);
+        return emptyTable.map(toResult);
+    }
+    const makeUpdateByte = (table) => (v, b) => v >>> 8 ^ table[v & 0xFF ^ b];
+    const updateByte = pipe(new Uint32Array(256), mapToTable, makeUpdateByte);
+    const update = (data) => data.reduce(updateByte, 0xFFFFFFFF);
+    const getDigest = (value) => ~value;
+    const toUint32 = (value) => (
+        value < 0
+        ? value + 0x100000000
+        : value
     );
-    const isDecodable = (code) => (
-        (code >= 0x20 && code < 0x7F)
-        || (code >= 0xA1 && code < 0xE0)
-    );
-    const filterDecodable = (codes) => codes.filter(isDecodable);
-    const toUnicode = (code) => (
-        code === 0x5C
-        ? 0xA5
-        : code === 0x7E
-        ? 0x203E
-        : code >= 0xA1
-        ? code + 0xFEC0
-        : code
-    );
-    const mapToUnicode = (codes) => codes.map(toUnicode);
-    const fromCharCode = (codes) => String.fromCharCode(...codes);
     /**
-     * @param {number[]} codes
-     * @returns {string}
+     * @param {Uint8Array|Uint8ClampedArray|number[]} data
+     * @returns {number}
      */
-    const decode = (codes) => pipe(
-        codes,
-        toArray,
-        filterDecodable,
-        mapToUnicode,
-        fromCharCode
+    const calculateDigest = (data) => pipe(
+        data,
+        update,
+        getDigest,
+        toUint32
     );
-    const toString = (string) => (
-        typeof string === "string"
-        ? string
-        : String(string)
-    );
-    const map = Array.prototype.map;
-    const toCharCode = (char) => char.charCodeAt(0);
-    const mapToCharCode = (string) => map.call(string, toCharCode);
-    const isEncodable = (code) => (
-        (code >= 0x20 && code < 0x5C)
-        || code === 0xA5
-        || (code >= 0x5D && code < 0x7E)
-        || code === 0x203E
-        || (code >= 0xFF61 && code < 0xFFA0)
-    );
-    const filterEncodable = (codes) => codes.filter(isEncodable);
-    const toJISX0201 = (code) => (
-        code === 0xA5
-        ? 0x5C
-        : code === 0x203E
-        ? 0x7E
-        : code >= 0xFF61
-        ? code - 0xFEC0
-        : code
-    );
-    const mapToJISX0201 = (codes) => codes.map(toJISX0201);
+    const is = (result) => (value) => value === result;
     /**
-     * @param {string} string
-     * @returns {number[]}
+     * @param {number} digest
+     * @param {Uint8Array|Uint8ClampedArray|number[]} data
+     * @returns {boolean}
      */
-    const encode = (string) => pipe(
-        string,
-        toString,
-        mapToCharCode,
-        filterEncodable,
-        mapToJISX0201
+    const verifyDigest = (digest, data) => pipe(
+        data,
+        calculateDigest,
+        is(digest)
     );
     return {
-        decode,
-        encode
+        calculateDigest,
+        verifyDigest
     };
 }());
