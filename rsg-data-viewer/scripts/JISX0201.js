@@ -5,7 +5,7 @@ const JISX0201 = (function () {
     const pipe = (...args) => args.reduce(call);
     const toArray = (codes) => (
         Array.isArray(codes)
-        ? codes
+        ? codes.slice()
         : Array.from(codes)
     );
     const isDecodable = (code) => (
