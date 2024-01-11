@@ -2,16 +2,14 @@
 const CRC = (function () {
     const call = (acc, fn) => fn(acc);
     const pipe = (...args) => args.reduce(call);
-    function mapToTable(emptyTable) {
-        const array8 = new Array(8).fill(0);
-        const reducer = (result) => (
-            (result & 1) === 1
-            ? result >>> 1 ^ 0xEDB88320
-            : result >>> 1
-        );
-        const toResult = (ignore, index) => array8.reduce(reducer, index);
-        return emptyTable.map(toResult);
-    }
+    const reducer = (result) => (
+        (result & 1) === 1
+        ? result >>> 1 ^ 0xEDB88320
+        : result >>> 1
+    );
+    const makeToTable = (array) => (ignore, i) => array.reduce(reducer, i);
+    const toTable = pipe(new Array(8).fill(0), makeToTable);
+    const mapToTable = (uint32array) => uint32array.map(toTable);
     const makeUpdateByte = (table) => (v, b) => v >>> 8 ^ table[v & 0xFF ^ b];
     const updateByte = pipe(new Uint32Array(256), mapToTable, makeUpdateByte);
     const update = (data) => data.reduce(updateByte, 0xFFFFFFFF);
