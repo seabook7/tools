@@ -29,6 +29,20 @@ const CRC = (function () {
         getDigest,
         toUint32
     );
+    const toHex = (digest) => digest.toString(16);
+    const toUpperCase = (hex) => hex.toUpperCase();
+    const pad0 = (hex) => hex.padStart(8, "0");
+    /**
+     * @param {Uint8Array|Uint8ClampedArray|number[]} data
+     * @returns {string}
+     */
+    const calculateDigestString = (data) => pipe(
+        data,
+        calculateDigest,
+        toHex,
+        toUpperCase,
+        pad0
+    );
     const is = (result) => (value) => value === result;
     /**
      * @param {number} digest
@@ -40,8 +54,20 @@ const CRC = (function () {
         calculateDigest,
         is(digest)
     );
+    /**
+     * @param {string} digestString
+     * @param {Uint8Array|Uint8ClampedArray|number[]} data
+     * @returns {boolean}
+     */
+    const verifyDigestString = (digestString, data) => pipe(
+        data,
+        calculateDigestString,
+        is(pipe(digestString, toUpperCase, pad0))
+    );
     return {
         calculateDigest,
-        verifyDigest
+        calculateDigestString,
+        verifyDigest,
+        verifyDigestString
     };
 }());
