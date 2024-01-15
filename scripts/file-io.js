@@ -1,6 +1,8 @@
 /*jslint browser*/
 const FileIO = (function () {
-    const isThenable = (object) => typeof object?.then === "function";
+    const isThenable = (object) => object !== null
+    && typeof object === "object"
+    && typeof object.then === "function";
     const call = (acc, fn) => (
         isThenable(acc)
         ? acc.then(fn)
