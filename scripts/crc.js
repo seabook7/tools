@@ -62,7 +62,7 @@ const CRC = (function () {
     const verifyDigestString = (digestString, data) => pipe(
         data,
         calculateDigestString,
-        is(pipe(digestString, toUpperCase, pad0))
+        pipe(digestString, toUpperCase, pad0, is)
     );
     return {
         calculateDigest,
