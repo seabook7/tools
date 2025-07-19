@@ -1,5 +1,5 @@
 /*jslint browser, devel*/
-/*global fileIO*/
+/*global FileIO*/
 // reference:
 // https://codeguide.co/
 (function () {
@@ -496,7 +496,7 @@
         showLineNumbers();
     });
     openButton.addEventListener("click", async function () {
-        const file = await fileIO.open("text/css");
+        const file = await FileIO.openFile("text/css");
         if (file) {
             alertPlaceholder.replaceChildren();
             fileNameInput.value = file.name;
@@ -540,7 +540,7 @@
     });
     saveButton.addEventListener("click", function () {
         const blob = new Blob([cssTextarea.value], {endings: "native"});
-        fileIO.download(blob, fileNameInput.value);
+        FileIO.download(blob, fileNameInput.value);
     });
     cssTextarea.addEventListener("input", showLineNumbers);
     cssTextarea.addEventListener("scroll", function () {

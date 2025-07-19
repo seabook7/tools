@@ -1,4 +1,4 @@
-/*global fileIO, editableTable*/
+/*global FileIO, editableTable*/
 /*jslint browser, this*/
 const csv = (function () {
     const lineBreak = "\n";
@@ -285,7 +285,7 @@ const csv = (function () {
     }
     newButton.addEventListener("click", createNew);
     openButton.addEventListener("click", async function () {
-        const file = await fileIO.open("text/csv,text/plain");
+        const file = await FileIO.openFile("text/csv,text/plain");
         if (file) {
             const text = await file.text();
             const data = csv.decode(text, quote, delimiter);
@@ -296,7 +296,7 @@ const csv = (function () {
     saveButton.addEventListener("click", function () {
         const data = editableTable.toData();
         const text = csv.encode(data, quote, delimiter);
-        fileIO.download(
+        FileIO.download(
             new Blob([text], {endings: "native"}),
             fileNameInput.value
         );

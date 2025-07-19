@@ -1,5 +1,5 @@
 /*jslint browser*/
-/*global Base64DataEncoding, fileIO*/
+/*global Base64DataEncoding, FileIO*/
 (function (query) {
     const fileRadio = query("#file-radio");
     const textRadio = query("#text-radio");
@@ -30,7 +30,7 @@
         textButtons.hidden = false;
     });
     openButton.addEventListener("click", async function () {
-        const file = await fileIO.open();
+        const file = await FileIO.openFile();
         if (file !== undefined) {
             const arrayBuffer = await file.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
@@ -47,7 +47,7 @@
         const data = Base64DataEncoding.fromBase64String(base64Textarea.value);
         const uint8Array = new Uint8Array(data);
         const blob = new Blob([uint8Array]);
-        fileIO.download(blob, fileNameInput.value);
+        FileIO.download(blob, fileNameInput.value);
     });
     lineBreaksCheckbox.addEventListener("change", function () {
         const base64String = base64Textarea.value.replaceAll("\n", "");
@@ -86,6 +86,6 @@
     saveBase64Button.addEventListener("click", function () {
         const base64String = base64Textarea.value;
         const blob = new Blob([base64String]);
-        fileIO.download(blob, "base64.txt");
+        FileIO.download(blob, "base64.txt");
     });
 }((selectors) => document.querySelector(selectors)));
