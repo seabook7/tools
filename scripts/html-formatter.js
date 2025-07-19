@@ -1,5 +1,5 @@
 /*jslint browser*/
-/*global DOMParser, fileIO*/
+/*global DOMParser, FileIO*/
 // reference:
 // https://codeguide.co/
 (function () {
@@ -365,7 +365,7 @@
         showLineNumbers();
     });
     openButton.addEventListener("click", async function () {
-        const file = await fileIO.open("text/html");
+        const file = await FileIO.openFile("text/html");
         if (file) {
             alertPlaceholder.replaceChildren();
             fileNameInput.value = file.name;
@@ -406,7 +406,7 @@
     });
     saveButton.addEventListener("click", function () {
         const blob = new Blob([htmlTextarea.value], {endings: "native"});
-        fileIO.download(blob, fileNameInput.value);
+        FileIO.download(blob, fileNameInput.value);
     });
     htmlTextarea.addEventListener("input", showLineNumbers);
     htmlTextarea.addEventListener("scroll", function () {

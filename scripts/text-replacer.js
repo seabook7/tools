@@ -1,17 +1,17 @@
 /*jslint browser*/
-/*global fileIO*/
+/*global FileIO*/
 function data() {
     let fileName = "New.txt";
     let optionsName = "Text Replacer Options.json";
     async function openFile(data) {
-        const file = await fileIO.open("text/plain");
+        const file = await FileIO.openFile("text/plain");
         if (file) {
             data.text = await file.text();
             fileName = file.name;
         }
     }
     function saveFile(text) {
-        fileIO.download(new Blob([text]), fileName);
+        FileIO.download(new Blob([text]), fileName);
     }
     function getLineNumbers(text) {
         const count = text.split("\n").length;
@@ -59,7 +59,7 @@ function data() {
         );
     }
     async function loadOptions(data) {
-        const file = await fileIO.open("application/json");
+        const file = await FileIO.openFile("application/json");
         if (file) {
             try {
                 const {
@@ -92,7 +92,7 @@ function data() {
         }
     }
     function saveOptions(data) {
-        fileIO.download(new Blob([JSON.stringify({
+        FileIO.download(new Blob([JSON.stringify({
             list: data.list.filter(
                 (item) => item.pattern.length > 0
                 || !item.enablePatternPrefixAndSuffix

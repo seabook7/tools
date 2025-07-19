@@ -1,5 +1,5 @@
 /*jslint browser*/
-/*global fileIO, editableTree*/
+/*global FileIO, editableTree*/
 const fileName = document.getElementById("file-name");
 const newButton = document.getElementById("new-button");
 const openButton = document.getElementById("open-button");
@@ -50,7 +50,7 @@ newButton.addEventListener("click", async function (event) {
     }
 });
 openButton.addEventListener("click", async function () {
-    const file = await fileIO.open("application/json");
+    const file = await FileIO.openFile("application/json");
     if (file) {
         fileName.value = file.name;
         tree.replaceChildren(spinner);
@@ -65,7 +65,7 @@ openButton.addEventListener("click", async function () {
 saveButton.addEventListener("click", function () {
     if (tree.firstChild !== null) {
         const [value] = editableTree.toValue(tree.firstChild);
-        fileIO.download(getBlob(value), fileName.value);
+        FileIO.download(getBlob(value), fileName.value);
     }
 });
 spacesCheckbox.addEventListener("click", function () {

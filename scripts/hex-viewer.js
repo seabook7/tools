@@ -1,4 +1,4 @@
-/*global fileIO*/
+/*global FileIO*/
 /*jslint browser*/
 const fileName = document.getElementById("file-name");
 const fileSize = document.getElementById("file-size");
@@ -27,7 +27,7 @@ function build(array) {
     hex.replaceChildren(hexText);
 }
 openButton.addEventListener("click", async function () {
-    const file = await fileIO.open();
+    const file = await FileIO.openFile();
     fileName.value = file.name;
     fileSize.value = file.size + " bytes";
     const array = new Uint8Array(await file.arrayBuffer());
